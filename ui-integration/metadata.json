@@ -1,0 +1,6 @@
+{
+  "name": "BioLens AI",
+  "description": "Multimodal AI-based preliminary health-risk screening platform analyzing eye, nail, and skin characteristics.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
