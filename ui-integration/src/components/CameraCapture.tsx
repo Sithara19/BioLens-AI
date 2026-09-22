@@ -51,7 +51,7 @@ export const CameraCapture: React.FC<
   // =========================================================
   // MODALITY-SPECIFIC CAMERA GUIDES
   //
-  // Eye -> Tongue -> Nail -> Skin
+  // Eye -> Tongue -> Nail -> Palm -> Skin
   // =========================================================
 
   const modalityGuides: Record<
@@ -84,6 +84,14 @@ export const CameraCapture: React.FC<
         'Hold your fingernail steady against a neutral background with the entire nail clearly visible in good lighting.',
       shape:
         'border-2 border-dashed border-sky-400 rounded-2xl',
+    },
+
+    palm: {
+      title: 'Align Palm in Center',
+      instruction:
+        'Hold your palm flat and steady with the palm surface clearly visible in good, even lighting.',
+      shape:
+        'border-2 border-dashed border-amber-400 rounded-[40%]',
     },
 
     skin: {
@@ -135,8 +143,7 @@ export const CameraCapture: React.FC<
     try {
       if (
         !navigator.mediaDevices ||
-        !navigator.mediaDevices
-          .getUserMedia
+        !navigator.mediaDevices.getUserMedia
       ) {
         throw new Error(
           'Camera access is not supported by this browser.'

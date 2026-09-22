@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   AppView,
   ModalityType,
@@ -52,11 +52,12 @@ export default function App() {
     useState<ModalityType>('eye');
 
   /*
-   * Four modalities:
+   * Five supported image modalities:
    *
    * Eye
    * Tongue
    * Nail
+   * Palm
    * Skin
    *
    * Empty string = image was skipped/not provided.
@@ -66,137 +67,9 @@ export default function App() {
       eye: '',
       tongue: '',
       nail: '',
+      palm: '',
       skin: '',
     });
-
-  // =========================================================
-  // SEED SAMPLE HISTORY
-  // =========================================================
-
-  useEffect(() => {
-    const existing = storage.getHistory();
-
-    if (existing.length === 0) {
-      const initialSeed: ScreeningHistoryItem = {
-        sessionId: 'BL-842910',
-        date: 'September 12, 2026',
-        status: 'Completed',
-
-        /*
-         * Demo history contains 3 images.
-         * Tongue was not used in this old demo record.
-         */
-        imageCount: 3,
-
-        result: {
-          sessionId: 'BL-842910',
-          createdAt: '2026-09-12T14:30:00.000Z',
-
-          predictions: [
-            {
-              condition: 'Anemia',
-              probability: 0.74,
-              riskLevel: 'moderate',
-              modalities: ['eye', 'nail'],
-
-              description:
-                'BioLens screening indicates a moderate observed risk pattern for anemia indicators based on eye and nail image analysis.',
-
-              clinicalSignificance:
-                'Lower eyelid and nail bed color tone provide visual indications that may be associated with anemia-related visual patterns.',
-
-              observedFeatures: [
-                'Eye: Slight pale tint observed in lower eyelid area',
-                'Nail: Mild pale coloration in nail bed',
-              ],
-            },
-
-            {
-              condition: 'Jaundice',
-              probability: 0.94,
-              riskLevel: 'low',
-              modalities: ['eye', 'skin'],
-
-              description:
-                'BioLens screening indicates a low observed risk pattern for jaundice-related discoloration in the analyzed eye and skin images.',
-
-              clinicalSignificance:
-                'The screening checks for visible color patterns that may be associated with jaundice.',
-
-              observedFeatures: [
-                'Eye: Clear sclera tone within normal visual limits',
-                'Skin: Normal surface color balance',
-              ],
-            },
-
-            {
-              condition: 'Diabetes Risk Indicators',
-              probability: 0.82,
-              riskLevel: 'low',
-              modalities: ['skin', 'nail'],
-
-              description:
-                'BioLens screening indicates a low observed risk pattern for visible skin or nail markers associated with metabolic health.',
-
-              clinicalSignificance:
-                'The screening checks for visible skin and nail patterns that may warrant further clinical evaluation.',
-
-              observedFeatures: [
-                'Skin: Even skin texture with no observed dark patches or dryness',
-                'Nail: Healthy nail contour and smooth surface appearance',
-              ],
-            },
-          ],
-
-          /*
-           * OLD DEMO RESULT.
-           *
-           * Tongue = 0 because no tongue image was used.
-           *
-           * These values are only for displaying the historical
-           * demo result. New screening results should calculate
-           * contributions dynamically from modalities that
-           * actually have images.
-           */
-          modalityContributions: {
-            eye: 44,
-            tongue: 0,
-            nail: 32,
-            skin: 24,
-          },
-
-          /*
-           * Tongue is intentionally empty in this old demo.
-           */
-          images: {
-            eye: '',
-            tongue: '',
-            nail: '',
-            skin: '',
-          },
-
-          isDemoMode: true,
-
-          overallAssessment: {
-            summary:
-              'Screening indicated a mild pale tint in the lower eyelid with nail and skin tones within the expected visual range.',
-
-            primaryObservedPatterns: [
-              'Mild pale coloration in lower eyelid',
-              'Normal nail contour and skin tone patterns',
-            ],
-
-            recommendedFollowUp:
-              'This is a preliminary visual screening result, not a diagnosis. Consult a qualified healthcare professional if you have symptoms or health concerns.',
-          },
-        },
-      };
-
-      storage.addHistory(initialSeed.result);
-
-      setHistory(storage.getHistory());
-    }
-  }, []);
 
   // =========================================================
   // LOGIN / SIGNUP
@@ -233,7 +106,8 @@ export default function App() {
 
   const handleStartScreening = () => {
     /*
-     * Start every screening with completely empty image state.
+     * Every new screening starts with completely
+     * empty image state.
      *
      * Empty image = modality skipped/not uploaded.
      */
@@ -241,6 +115,7 @@ export default function App() {
       eye: '',
       tongue: '',
       nail: '',
+      palm: '',
       skin: '',
     });
 
@@ -281,7 +156,12 @@ export default function App() {
   // =========================================================
   // MOVE TO NEXT MODALITY
   //
-  // Eye -> Tongue -> Nail -> Skin
+  // CapturePage controls the actual sequence:
+  //
+  // Eye -> Tongue -> Nail -> Palm -> Skin
+  //
+  // When Skin is finished, CapturePage calls
+  // onFinishedAll instead of providing another modality.
   // =========================================================
 
   const handleNextModality = (
@@ -296,11 +176,12 @@ export default function App() {
   //
   // Eye    -> Tongue
   // Tongue -> Nail
-  // Nail   -> Skin
+  // Nail   -> Palm
+  // Palm   -> Skin
   // Skin   -> All Captured
   //
-  // The skipped modality remains an empty string.
-  // Therefore its AI model will NOT be included later.
+  // The skipped modality remains empty, so the backend
+  // will not receive an image for that modality.
   // =========================================================
 
   const handleSkipModality = (
@@ -330,6 +211,11 @@ export default function App() {
         break;
 
       case 'nail':
+        setCaptureModality('palm');
+        setCurrentView('capture');
+        break;
+
+      case 'palm':
         setCaptureModality('skin');
         setCurrentView('capture');
         break;
@@ -387,10 +273,10 @@ export default function App() {
 
   const handleStartAnalysis = () => {
     /*
-     * AnalysisPage receives capturedImages.
+     * AnalysisPage receives all five possible image keys.
      *
-     * It will determine which modalities actually have
-     * images and only send/use those modalities.
+     * It and the API layer determine which modalities
+     * actually contain images.
      */
     setCurrentView('analysis');
   };
@@ -402,10 +288,32 @@ export default function App() {
   const handleAnalysisComplete = (
     result: ScreeningResult
   ) => {
+    /*
+     * TEMPORARY DEBUGGING:
+     * Verify exactly what reaches App.tsx after
+     * the real backend response is transformed.
+     */
+    console.log(
+      'BIOLENS FINAL SCREENING RESULT:',
+      result
+    );
+
+    console.log(
+      'BIOLENS FINAL PREDICTIONS:',
+      result.predictions
+    );
+
+    console.log(
+      'BIOLENS PREDICTION CONDITIONS:',
+      result.predictions.map(
+        (prediction) => prediction.condition
+      )
+    );
+
     setCurrentResult(result);
 
     /*
-     * Refresh history after analysis.
+     * Refresh history after the real backend analysis.
      */
     setHistory(storage.getHistory());
 
@@ -461,7 +369,7 @@ export default function App() {
 
         {/* ===================================================
             LANDING
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'landing' && (
           <LandingPage
@@ -480,7 +388,7 @@ export default function App() {
 
         {/* ===================================================
             SIGN UP
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'signup' && (
           <SignUpPage
@@ -493,7 +401,7 @@ export default function App() {
 
         {/* ===================================================
             LOGIN
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'login' && (
           <LoginPage
@@ -506,7 +414,7 @@ export default function App() {
 
         {/* ===================================================
             DASHBOARD
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'dashboard' &&
           user && (
@@ -530,7 +438,7 @@ export default function App() {
 
         {/* ===================================================
             CONSENT
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'consent' && (
           <ConsentPage
@@ -547,8 +455,8 @@ export default function App() {
 
         {/* ===================================================
             CAPTURE
-            Eye -> Tongue -> Nail -> Skin
-        =================================================== */}
+            Eye -> Tongue -> Nail -> Palm -> Skin
+        ==================================================== */}
 
         {currentView === 'capture' && (
           <CapturePage
@@ -556,8 +464,8 @@ export default function App() {
              * Force a fresh CapturePage instance whenever
              * the modality changes.
              *
-             * This makes Skip reliably move from:
-             * Eye -> Tongue -> Nail -> Skin.
+             * This makes Skip reliably move through:
+             * Eye -> Tongue -> Nail -> Palm -> Skin.
              */
             key={captureModality}
 
@@ -593,7 +501,7 @@ export default function App() {
 
         {/* ===================================================
             ALL CAPTURED
-        =================================================== */}
+        ==================================================== */}
 
         {currentView ===
           'all-captured' && (
@@ -610,7 +518,7 @@ export default function App() {
 
         {/* ===================================================
             REVIEW
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'review' && (
           <ReviewPage
@@ -629,7 +537,7 @@ export default function App() {
 
         {/* ===================================================
             ANALYSIS
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'analysis' && (
           <AnalysisPage
@@ -642,7 +550,7 @@ export default function App() {
 
         {/* ===================================================
             RESULTS
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'results' &&
           currentResult && (
@@ -656,7 +564,7 @@ export default function App() {
 
         {/* ===================================================
             HISTORY
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'history' && (
           <HistoryPage
@@ -672,7 +580,7 @@ export default function App() {
 
         {/* ===================================================
             PROFILE
-        =================================================== */}
+        ==================================================== */}
 
         {currentView === 'profile' &&
           user && (

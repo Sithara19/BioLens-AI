@@ -13,6 +13,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Smile,
+  Hand,
 } from 'lucide-react';
 import { UserProfile, ScreeningHistoryItem, ScreeningResult } from '../types';
 import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
@@ -53,7 +54,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </h1>
 
           <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed font-normal">
-            Your health-risk screening console. Capture eye, tongue, nail, and skin images to view preliminary risk indicators.
+            Your multimodal screening console. Capture eye, tongue, nail, palm,
+            and skin images to view preliminary model outputs.
           </p>
         </div>
 
@@ -156,7 +158,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </h3>
 
                 <p className="text-xs text-slate-500">
-                  Four visual inspection modalities available for multimodal screening
+                  Five visual inspection modalities available for multimodal screening
                 </p>
               </div>
 
@@ -165,7 +167,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 py-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 py-6">
               {[
                 {
                   title: 'Eye',
@@ -181,6 +183,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   title: 'Nail',
                   detail: 'Fingernail',
                   icon: Layers,
+                },
+                {
+                  title: 'Palm',
+                  detail: 'Palm Surface',
+                  icon: Hand,
                 },
                 {
                   title: 'Skin',
@@ -242,7 +249,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </h3>
 
             <p className="text-xs text-slate-500">
-              Access completed multimodal screening reports and condition profiles
+              Access completed multimodal screening reports and model outputs
             </p>
           </div>
 
@@ -269,7 +276,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </h4>
 
               <p className="text-xs text-slate-500 leading-relaxed">
-                You have not completed any health-risk screenings yet. Click below to begin your first multimodal screening session.
+                You have not completed any multimodal screening sessions yet.
+                Click below to begin your first screening session.
               </p>
             </div>
 
@@ -306,7 +314,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   </div>
 
                   <p className="text-xs text-slate-500 mb-4">
-                    Multimodal screening session with Eye, Tongue, Nail, and Skin inputs.
+                    Multimodal screening session with Eye, Tongue, Nail, Palm,
+                    and Skin inputs.
                   </p>
                 </div>
 

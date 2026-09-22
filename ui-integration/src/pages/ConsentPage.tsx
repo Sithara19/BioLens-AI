@@ -1,9 +1,9 @@
-
 import React from 'react';
 import {
   Eye,
   Smile,
   Layers,
+  Hand,
   Camera,
   ShieldCheck,
   ArrowRight,
@@ -19,7 +19,7 @@ const modalities = [
   {
     number: '01',
     title: 'Eye',
-    subtitle: 'Eye Image',
+    subtitle: 'Eye & Lower Eyelid',
     description:
       'Capture or upload a photo of your eye and lower eyelid in good lighting.',
     icon: Eye,
@@ -27,7 +27,7 @@ const modalities = [
   {
     number: '02',
     title: 'Tongue',
-    subtitle: 'Tongue Image',
+    subtitle: 'Tongue Surface',
     description:
       'Capture or upload a clear photo of the visible tongue surface in good, even lighting.',
     icon: Smile,
@@ -35,17 +35,25 @@ const modalities = [
   {
     number: '03',
     title: 'Nail',
-    subtitle: 'Fingernail Image',
+    subtitle: 'Fingernail',
     description:
       'Capture or upload a photo of your fingernail against a plain background.',
     icon: Layers,
   },
   {
     number: '04',
-    title: 'Skin',
-    subtitle: 'Skin Area Image',
+    title: 'Palm',
+    subtitle: 'Palm Surface',
     description:
-      'Capture or upload a photo of a clear area of skin in even lighting.',
+      'Capture or upload a clear photo of your palm surface with the hand flat and well illuminated.',
+    icon: Hand,
+  },
+  {
+    number: '05',
+    title: 'Skin',
+    subtitle: 'Skin Area',
+    description:
+      'Capture or upload a clear photo of the selected skin area in even lighting.',
     icon: Layers,
   },
 ];
@@ -56,15 +64,10 @@ export function ConsentPage({
 }: ConsentPageProps) {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-
       <div className="mx-auto max-w-5xl">
 
-        {/* =====================================================
-            HEADER
-        ====================================================== */}
-
+        {/* HEADER */}
         <div className="mb-8 text-center">
-
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50">
             <ShieldCheck
               className="h-7 w-7 text-teal-600"
@@ -77,34 +80,26 @@ export function ConsentPage({
           </h1>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            BioLens analyzes images from multiple body regions
-            and combines AI-generated predictions to provide
-            preliminary health-risk screening information.
+            BioLens analyzes images from multiple body regions and combines
+            model predictions to provide preliminary health-screening
+            information for academic demonstration.
           </p>
-
         </div>
 
-        {/* =====================================================
-            MODALITY CAPTURE SEQUENCE
-        ====================================================== */}
-
+        {/* MODALITY CAPTURE SEQUENCE */}
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-
           <div className="mb-6">
-
             <h2 className="text-lg font-semibold text-slate-900">
               Required Modality Capture Sequence
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              You will be guided through four sequential image
-              captures. You may skip any modality during capture.
+              You will be guided through five sequential image captures.
+              You may skip any modality during capture.
             </p>
-
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {modalities.map((modality) => {
               const Icon = modality.icon;
 
@@ -113,26 +108,20 @@ export function ConsentPage({
                   key={modality.title}
                   className="relative rounded-2xl border border-slate-200 bg-slate-50/70 p-5 transition hover:border-teal-200 hover:bg-teal-50/30"
                 >
-
                   {/* Step Number */}
-
                   <div className="absolute right-4 top-4 text-xs font-bold tracking-wider text-slate-300">
                     {modality.number}
                   </div>
 
                   {/* Icon */}
-
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-
                     <Icon
                       className="h-5 w-5 text-teal-600"
                       strokeWidth={1.8}
                     />
-
                   </div>
 
                   {/* Text */}
-
                   <h3 className="text-base font-semibold text-slate-900">
                     {modality.title}
                   </h3>
@@ -146,92 +135,64 @@ export function ConsentPage({
                   </p>
 
                   {/* Camera / Upload */}
-
                   <div className="mt-4 flex items-center gap-2 text-xs font-medium text-slate-500">
-
                     <Camera className="h-4 w-4" />
 
                     <span>
-                      Camera or upload supported
+                      Camera or gallery upload supported
                     </span>
-
                   </div>
-
                 </div>
               );
             })}
-
           </div>
-
         </section>
 
-        {/* =====================================================
-            DATA HANDLING
-        ====================================================== */}
-
+        {/* DATA HANDLING */}
         <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
-
           <div className="flex gap-3">
-
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
 
             <div>
-
               <h3 className="text-sm font-semibold text-slate-800">
                 Data Handling &amp; Privacy
               </h3>
 
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                All images submitted for this prototype remain
-                processed within your active browser session or
-                client-configured endpoint. No biometric identifiers
-                are permanently shared with commercial advertisers.
+                Images are processed through the configured BioLens
+                prototype pipeline for this academic demonstration.
+                Images are used only for the screening workflow and
+                are not intended for permanent clinical record storage.
               </p>
-
             </div>
-
           </div>
-
         </div>
 
-        {/* =====================================================
-            MEDICAL DISCLAIMER
-        ====================================================== */}
-
+        {/* MEDICAL DISCLAIMER */}
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
-
           <div className="flex gap-3">
-
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
 
             <div>
-
               <h3 className="text-sm font-semibold text-slate-900">
                 Medical Disclaimer &amp; Screening Notice
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-700">
-                BioLens AI is an AI-based preliminary health-risk
-                screening tool. Its results are{' '}
-                <strong>not a medical diagnosis</strong> and should
-                not replace professional medical advice, clinical
-                examination, laboratory testing, or treatment.
-                Always consult a qualified healthcare professional
-                for appropriate medical evaluation and guidance.
+                BioLens AI is an AI-based preliminary health-screening
+                research prototype. Its outputs are{' '}
+                <strong>not a medical diagnosis</strong> and should not
+                replace professional medical advice, clinical examination,
+                laboratory testing, or treatment. Consult a qualified
+                healthcare professional for appropriate medical evaluation
+                and guidance.
               </p>
-
             </div>
-
           </div>
-
         </div>
 
-        {/* =====================================================
-            ACTION BUTTONS
-        ====================================================== */}
-
+        {/* ACTION BUTTONS */}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-
           <button
             type="button"
             onClick={onCancel}
@@ -251,15 +212,10 @@ export function ConsentPage({
 
             <ArrowRight className="h-4 w-4" />
           </button>
-
         </div>
 
-        {/* =====================================================
-            FOOTER
-        ====================================================== */}
-
+        {/* FOOTER */}
         <div className="mt-8 border-t border-slate-200 pt-5 text-center">
-
           <p className="text-sm font-semibold text-slate-700">
             BioLens AI
           </p>
@@ -271,11 +227,9 @@ export function ConsentPage({
           <p className="mt-2 text-xs text-slate-400">
             Multimodal Health-Risk Screening Research Prototype
           </p>
-
         </div>
 
       </div>
-
     </div>
   );
 }

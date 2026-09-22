@@ -1,4 +1,3 @@
-
 import { ModalityType } from '../types';
 
 // =========================================================
@@ -119,7 +118,6 @@ function createTongueSvg(): string {
 
     <rect width="600" height="450" fill="#f8fafc"/>
 
-    <!-- Tongue shape -->
     <path
       d="M 300,365
          C 220,365 150,315 145,245
@@ -133,7 +131,6 @@ function createTongueSvg(): string {
       stroke-width="3"
     />
 
-    <!-- Tongue center line -->
     <path
       d="M 300,135 C 292,185 292,250 300,330"
       stroke="#9f1239"
@@ -142,7 +139,6 @@ function createTongueSvg(): string {
       opacity="0.45"
     />
 
-    <!-- Surface texture -->
     <g fill="#881337" opacity="0.25">
       <circle cx="220" cy="185" r="3"/>
       <circle cx="250" cy="165" r="2.5"/>
@@ -156,7 +152,6 @@ function createTongueSvg(): string {
       <circle cx="370" cy="250" r="2.5"/>
     </g>
 
-    <!-- Highlight -->
     <ellipse
       cx="300"
       cy="205"
@@ -165,7 +160,6 @@ function createTongueSvg(): string {
       fill="url(#tongueHighlight)"
     />
 
-    <!-- Framing guide -->
     <rect
       x="125"
       y="85"
@@ -281,6 +275,127 @@ function createNailSvg(): string {
 
 
 // =========================================================
+// PALM SAMPLE
+// =========================================================
+
+function createPalmSvg(): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%">
+    <defs>
+      <radialGradient id="palmSkin" cx="50%" cy="45%" r="70%">
+        <stop offset="0%" stop-color="#fed7aa"/>
+        <stop offset="55%" stop-color="#fdba74"/>
+        <stop offset="85%" stop-color="#fb923c"/>
+        <stop offset="100%" stop-color="#ea580c"/>
+      </radialGradient>
+
+      <radialGradient id="palmHighlight" cx="50%" cy="40%" r="55%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <rect width="600" height="450" fill="#f8fafc"/>
+
+    <!-- Palm and fingers -->
+    <path
+      d="M 220,390
+         C 205,355 195,320 195,285
+         L 195,165
+         C 195,150 205,140 218,140
+         C 231,140 238,150 238,165
+         L 238,245
+         L 245,115
+         C 246,98 257,88 270,89
+         C 284,90 291,101 290,118
+         L 288,245
+         L 300,85
+         C 301,68 312,58 326,60
+         C 340,62 347,74 346,91
+         L 343,247
+         L 356,105
+         C 358,89 369,81 382,83
+         C 395,85 402,96 400,112
+         L 394,260
+         L 408,145
+         C 410,131 420,124 432,127
+         C 444,130 450,141 448,155
+         L 438,285
+         C 435,325 422,355 397,390
+         Z"
+      fill="url(#palmSkin)"
+      stroke="#c2410c"
+      stroke-width="3"
+    />
+
+    <!-- Palm highlight -->
+    <ellipse
+      cx="320"
+      cy="285"
+      rx="105"
+      ry="95"
+      fill="url(#palmHighlight)"
+    />
+
+    <!-- Natural palm lines -->
+    <path
+      d="M 235,270 C 270,245 330,245 395,275"
+      stroke="#c2410c"
+      stroke-width="4"
+      fill="none"
+      opacity="0.35"
+      stroke-linecap="round"
+    />
+
+    <path
+      d="M 235,300 C 280,280 345,285 405,315"
+      stroke="#c2410c"
+      stroke-width="3"
+      fill="none"
+      opacity="0.28"
+      stroke-linecap="round"
+    />
+
+    <path
+      d="M 270,345 C 290,315 335,310 370,335"
+      stroke="#c2410c"
+      stroke-width="3"
+      fill="none"
+      opacity="0.25"
+      stroke-linecap="round"
+    />
+
+    <!-- Framing guide -->
+    <rect
+      x="175"
+      y="50"
+      width="275"
+      height="345"
+      rx="30"
+      fill="none"
+      stroke="#0ea5e9"
+      stroke-width="2"
+      stroke-dasharray="8,6"
+      opacity="0.7"
+    />
+
+    <text
+      x="300"
+      y="420"
+      text-anchor="middle"
+      fill="#64748b"
+      font-family="system-ui, sans-serif"
+      font-size="14"
+      font-weight="600"
+    >
+      BioLens Visual Modality 04: Palm
+    </text>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+
+// =========================================================
 // SKIN SAMPLE
 // =========================================================
 
@@ -372,7 +487,7 @@ function createSkinSvg(): string {
       font-size="14"
       font-weight="600"
     >
-      BioLens Visual Modality 04: Skin
+      BioLens Visual Modality 05: Skin
     </text>
   </svg>`;
 
@@ -398,7 +513,7 @@ export interface ModalityPhotoGuide {
 
 
 // =========================================================
-// ALL FOUR MODALITY GUIDES
+// ALL FIVE MODALITY GUIDES
 // =========================================================
 
 export const MODALITY_PHOTO_GUIDES: Record<
@@ -427,9 +542,6 @@ export const MODALITY_PHOTO_GUIDES: Record<
     ],
   },
 
-  // =======================================================
-  // TONGUE
-  // =======================================================
   tongue: {
     title: 'Tongue',
     subtitle: 'Proper framing sample for tongue screening',
@@ -471,6 +583,28 @@ export const MODALITY_PHOTO_GUIDES: Record<
       'Avoid colored or opaque nail polish / artificial nails',
       'Avoid dark, patterned, or cluttered backgrounds',
       'Do not tilt finger at an extreme sideways angle',
+    ],
+  },
+
+  palm: {
+    title: 'Palm Surface',
+    subtitle: 'Proper framing sample for palm screening',
+    sampleName: 'Palm Photo Sample Guide',
+    dataUrl: createPalmSvg(),
+    distance: '15–20 cm (6–8 inches) from palm',
+    lighting:
+      'Bright, even natural daylight or soft room light without harsh shadows',
+    positioning:
+      'Hold your palm flat with fingers comfortably spread and the full palm surface clearly visible in the frame.',
+    dos: [
+      'Show the complete palm surface and fingers',
+      'Keep the palm flat and centered in the frame',
+      'Use even lighting with the palm texture clearly visible',
+    ],
+    donts: [
+      'Avoid curled fingers or partially covered palm areas',
+      'Avoid strong shadows across the palm',
+      'Do not submit blurry, filtered, or heavily edited photos',
     ],
   },
 
@@ -526,6 +660,12 @@ export const SAMPLE_MODALITY_IMAGES: Record<
     name: MODALITY_PHOTO_GUIDES.nail.title,
     description: MODALITY_PHOTO_GUIDES.nail.subtitle,
     dataUrl: MODALITY_PHOTO_GUIDES.nail.dataUrl,
+  },
+
+  palm: {
+    name: MODALITY_PHOTO_GUIDES.palm.title,
+    description: MODALITY_PHOTO_GUIDES.palm.subtitle,
+    dataUrl: MODALITY_PHOTO_GUIDES.palm.dataUrl,
   },
 
   skin: {

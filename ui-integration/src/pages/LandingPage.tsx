@@ -1,298 +1,374 @@
 import React from 'react';
 import {
   Eye,
+  Hand,
+  HeartPulse,
+  Image as ImageIcon,
+  Microscope,
+  ScanLine,
+  ShieldCheck,
   Sparkles,
-  Layers,
-  ArrowRight,
-  Camera,
-  Cpu,
-  GitMerge,
-  FileCheck2,
-  ChevronRight,
-  CheckCircle,
-  Smile,
+  Stethoscope,
+  Upload,
 } from 'lucide-react';
-import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
 
 interface LandingPageProps {
   onGetStarted: () => void;
   onLogin: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({
+const modalities = [
+  {
+    number: '01',
+    title: 'Eye',
+    description:
+      'Visual screening from eye images for diabetes and jaundice model outputs.',
+    icon: Eye,
+  },
+  {
+    number: '02',
+    title: 'Tongue',
+    description:
+      'Visual analysis of the tongue surface for detected visual findings.',
+    icon: HeartPulse,
+  },
+  {
+    number: '03',
+    title: 'Nail',
+    description:
+      'Visual screening of fingernails and nail beds using a dedicated classification model.',
+    icon: ScanLine,
+  },
+  {
+    number: '04',
+    title: 'Palm',
+    description:
+      'Palm images provide an additional input to the anemia multimodal fusion model.',
+    icon: Hand,
+  },
+  {
+    number: '05',
+    title: 'Skin',
+    description:
+      'Visual screening of submitted skin images using a dedicated classification model.',
+    icon: Microscope,
+  },
+];
+
+const workflow = [
+  {
+    number: '01',
+    title: 'Capture',
+    description:
+      'Upload images from your gallery or capture them with your device camera.',
+    icon: Upload,
+  },
+  {
+    number: '02',
+    title: 'Analyze',
+    description:
+      'Specialized vision models process each submitted anatomical region.',
+    icon: ScanLine,
+  },
+  {
+    number: '03',
+    title: 'Fuse',
+    description:
+      'Eye, nail, and palm model features are combined by the anemia fusion model.',
+    icon: Sparkles,
+  },
+  {
+    number: '04',
+    title: 'Review',
+    description:
+      'View model predictions, probabilities, detection confidence, and fusion contributions.',
+    icon: ImageIcon,
+  },
+];
+
+const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted,
   onLogin,
 }) => {
-  const modalities = [
-    {
-      title: 'Eye',
-      subtitle: 'Visual screening from eye images.',
-      detail: 'Analyzes eye and lower eyelid images for color and clarity.',
-      icon: Eye,
-      color: 'from-teal-500/10 to-teal-500/5',
-      borderColor: 'border-teal-200/80',
-      badgeColor: 'text-teal-700 bg-teal-50',
-      accent: '#0d9488',
-    },
-    {
-      title: 'Tongue',
-      subtitle: 'Visual screening from tongue images.',
-      detail:
-        'Analyzes the visible tongue surface for color, coating, and visual patterns.',
-      icon: Smile,
-      color: 'from-rose-500/10 to-rose-500/5',
-      borderColor: 'border-rose-200/80',
-      badgeColor: 'text-rose-700 bg-rose-50',
-      accent: '#e11d48',
-    },
-    {
-      title: 'Nail',
-      subtitle: 'Visual screening from fingernail images.',
-      detail: 'Analyzes fingernail and nail bed color, tint, and shape.',
-      icon: Layers,
-      color: 'from-sky-500/10 to-sky-500/5',
-      borderColor: 'border-sky-200/80',
-      badgeColor: 'text-sky-700 bg-sky-50',
-      accent: '#0284c7',
-    },
-    {
-      title: 'Skin',
-      subtitle: 'Visual screening from skin images.',
-      detail: 'Analyzes skin patch color tone, texture, and balance.',
-      icon: Layers,
-      color: 'from-blue-500/10 to-blue-500/5',
-      borderColor: 'border-blue-200/80',
-      badgeColor: 'text-blue-700 bg-blue-50',
-      accent: '#2563eb',
-    },
-  ];
-
-  const steps = [
-    {
-      num: '01',
-      title: 'Capture',
-      desc: 'Capture or upload photos of eye, tongue, nail, and skin using your device.',
-      icon: Camera,
-    },
-    {
-      num: '02',
-      title: 'Analyze',
-      desc: 'Specialized deep learning vision models process each anatomical region independently.',
-      icon: Cpu,
-    },
-    {
-      num: '03',
-      title: 'Fuse',
-      desc: 'Cross-attention multimodal fusion aggregates feature vectors into condition risk profiles.',
-      icon: GitMerge,
-    },
-    {
-      num: '04',
-      title: 'Screen',
-      desc: 'Receive preliminary risk classifications, confidence levels, and model explainability maps.',
-      icon: FileCheck2,
-    },
-  ];
-
   return (
-    <div className="w-full flex flex-col items-center">
-      {/* Top Academic Banner */}
-      <MedicalDisclaimer variant="banner" />
+    <div className="min-h-screen bg-slate-950 text-white overflow-hidden">
+      {/* Academic Prototype Banner */}
+      <div className="bg-amber-500/10 border-b border-amber-400/20 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 text-center">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400/15 text-amber-300">
+            <ShieldCheck size={14} />
+          </span>
+          <p className="text-xs sm:text-sm text-amber-100/90">
+            <span className="font-semibold">Investigational Academic Prototype:</span>{' '}
+            BioLens AI performs preliminary multimodal visual screening only.
+            Not approved for clinical diagnostics.
+          </p>
+        </div>
+      </div>
 
-      {/* Hero Section */}
-      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16 lg:pt-20 lg:pb-24 text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
+      {/* Navigation */}
+      <header className="relative z-10">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
+              <Stethoscope size={20} />
+            </div>
 
-          {/* BioLens Healthcare Logo */}
-          <div className="flex justify-center mb-2">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white border border-slate-200 shadow-lg flex items-center justify-center overflow-hidden p-2">
-              <img
-                src="/images/BioLens AI Healthcare Logo.png"
-                alt="BioLens AI Healthcare Logo"
-                className="w-full h-full object-contain"
-              />
+            <div>
+              <div className="font-semibold tracking-tight">BioLens</div>
+              <div className="text-[10px] uppercase tracking-[0.22em] text-slate-400">
+                AI
+              </div>
             </div>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200/80 text-teal-800 text-xs font-semibold shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-            Multimodal Health-Risk Screening Research Prototype
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
-            BioLens AI
-
-            <span className="block text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent mt-2">
-              See Beyond the Surface.
-            </span>
-          </h1>
-
-          <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto">
-            An AI-powered multimodal health-risk screening platform that analyzes visible indicators across multiple body parts to provide preliminary risk indicators.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
-            <button
-              onClick={onGetStarted}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20 hover:shadow-teal-600/30 transition-all transform hover:-translate-y-0.5"
-            >
-              Get Started
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={onLogin}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-sm transition-all shadow-xs"
-            >
-              Login to Account
-            </button>
-          </div>
-
-          {/* Academic disclaimer highlight */}
-          <p className="text-xs text-slate-400 max-w-md mx-auto pt-2">
-            BioLens AI provides preliminary screening information and does not replace professional medical diagnosis.
-          </p>
-        </div>
-      </section>
-
-      {/* 4 Modalities Grid */}
-      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200/70">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="text-xs uppercase font-bold tracking-wider text-teal-600">
-            Multimodal Visual Sensor Framework
-          </span>
-
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Four Screening Modalities
-          </h2>
-
-          <p className="text-xs sm:text-sm text-slate-500">
-            Combining non-invasive visual screening from eye, tongue, nail, and skin images.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {modalities.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <div
-                key={item.title}
-                className={`rounded-2xl border ${item.borderColor} bg-gradient-to-b ${item.color} p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between`}
-              >
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-white shadow-2xs border border-slate-200/80 flex items-center justify-center mb-5">
-                    <Icon
-                      className="w-6 h-6"
-                      style={{ color: item.accent }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-                      {item.title}
-                    </h3>
-
-                    <span
-                      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${item.badgeColor}`}
-                    >
-                      Modality
-                    </span>
-                  </div>
-
-                  <p className="text-sm font-semibold text-slate-800 mb-2">
-                    {item.subtitle}
-                  </p>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {item.detail}
-                  </p>
-                </div>
-
-                <div className="pt-5 mt-4 border-t border-slate-200/60 flex items-center gap-1.5 text-xs font-semibold text-teal-800">
-                  <CheckCircle className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Deep Feature Extraction</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* How BioLens Works: 4 Simple Steps */}
-      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-slate-200/70">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="text-xs uppercase font-bold tracking-wider text-cyan-600">
-            Analytical Workflow
-          </span>
-
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            How BioLens Works
-          </h2>
-
-          <p className="text-xs sm:text-sm text-slate-500">
-            A seamless four-step pipeline transitioning from device image capture to multimodal neural fusion.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((s) => {
-            const Icon = s.icon;
-
-            return (
-              <div
-                key={s.num}
-                className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs relative flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-black text-slate-300 font-mono">
-                      {s.num}
-                    </span>
-
-                    <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">
-                    {s.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {s.desc}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-12 text-center">
           <button
-            onClick={onGetStarted}
-            className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition-colors shadow-xs"
+            onClick={onLogin}
+            className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition"
           >
-            Start Your Preliminary Screening
-            <ChevronRight className="w-4 h-4" />
+            Login
           </button>
         </div>
-      </section>
+      </header>
 
-      {/* Bottom Medical Disclaimer & Footer */}
-      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <MedicalDisclaimer variant="card" />
+      {/* Hero */}
+      <main>
+        <section className="relative">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute left-1/2 top-16 h-96 w-96 -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl" />
+            <div className="absolute right-0 top-72 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+          </div>
 
-        <div className="mt-8 text-center text-xs text-slate-400 space-y-1">
-          <p>
-            © {new Date().getFullYear()} BioLens AI Research Team. All rights reserved.
-          </p>
+          <div className="relative max-w-7xl mx-auto px-6 pt-16 pb-20 lg:pt-24 lg:pb-28">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-slate-300 mb-7">
+                <Sparkles size={14} />
+                Academic Project Demonstration
+              </div>
 
-          <p>
-            Built for academic healthcare AI/ML demonstration. Ready for FastAPI model serving backend.
-          </p>
+              <div className="mx-auto mb-7 h-16 w-16 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center">
+                <Stethoscope size={30} />
+              </div>
+
+              <p className="text-sm uppercase tracking-[0.28em] text-cyan-300/80 mb-5">
+                Multimodal Visual Screening Research Prototype
+              </p>
+
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight">
+                BioLens AI
+              </h1>
+
+              <p className="mt-4 text-2xl sm:text-3xl text-slate-300 font-light">
+                See Beyond the Surface.
+              </p>
+
+              <p className="mt-7 max-w-2xl mx-auto text-base sm:text-lg leading-8 text-slate-400">
+                An AI-powered multimodal visual screening platform that analyzes
+                submitted images from multiple body regions and provides
+                preliminary model outputs for academic research and demonstration.
+              </p>
+
+              <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={onGetStarted}
+                  className="w-full sm:w-auto rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-slate-950 hover:bg-slate-100 transition"
+                >
+                  Start Screening
+                </button>
+
+                <button
+                  onClick={onLogin}
+                  className="w-full sm:w-auto rounded-xl border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-medium text-white hover:bg-white/10 transition"
+                >
+                  Login to Account
+                </button>
+              </div>
+
+              <p className="mt-5 text-xs text-slate-500">
+                BioLens AI provides preliminary model outputs and does not replace
+                professional medical evaluation.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Modalities */}
+        <section className="border-y border-white/5 bg-white/[0.02]">
+          <div className="max-w-7xl mx-auto px-6 py-20">
+            <div className="max-w-2xl mb-12">
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300/80">
+                Multimodal Visual Sensor Framework
+              </p>
+
+              <h2 className="mt-3 text-3xl sm:text-4xl font-semibold">
+                Five Screening Modalities
+              </h2>
+
+              <p className="mt-4 text-slate-400 leading-7">
+                BioLens AI accepts images from five anatomical regions. Different
+                specialized models process each modality, while Eye, Nail, and
+                Palm inputs can participate in the anemia fusion pipeline.
+              </p>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+              {modalities.map((modality) => {
+                const Icon = modality.icon;
+
+                return (
+                  <div
+                    key={modality.title}
+                    className="rounded-2xl border border-white/10 bg-slate-900/70 p-6"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500">
+                        {modality.number}
+                      </span>
+
+                      <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                        <Icon size={19} />
+                      </div>
+                    </div>
+
+                    <h3 className="mt-7 text-lg font-semibold">
+                      {modality.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm leading-6 text-slate-400">
+                      {modality.description}
+                    </p>
+
+                    <div className="mt-6 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
+                      Dedicated Model
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Workflow */}
+        <section>
+          <div className="max-w-7xl mx-auto px-6 py-20">
+            <div className="max-w-2xl mb-12">
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300/80">
+                Analytical Workflow
+              </p>
+
+              <h2 className="mt-3 text-3xl sm:text-4xl font-semibold">
+                How BioLens Works
+              </h2>
+
+              <p className="mt-4 text-slate-400 leading-7">
+                A four-stage workflow taking submitted images from capture
+                through model inference and result review.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              {workflow.map((step) => {
+                const Icon = step.icon;
+
+                return (
+                  <div
+                    key={step.number}
+                    className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-3xl font-semibold text-white/20">
+                        {step.number}
+                      </span>
+
+                      <Icon size={20} className="text-slate-300" />
+                    </div>
+
+                    <h3 className="mt-7 text-lg font-semibold">
+                      {step.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm leading-6 text-slate-400">
+                      {step.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="border-t border-white/5 bg-white/[0.02]">
+          <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center">
+              <ScanLine size={25} />
+            </div>
+
+            <h2 className="mt-6 text-3xl sm:text-4xl font-semibold">
+              Start Your Preliminary Screening
+            </h2>
+
+            <p className="mt-4 text-slate-400 leading-7">
+              Submit the available images, review the captured inputs, and
+              examine the resulting model outputs.
+            </p>
+
+            <button
+              onClick={onGetStarted}
+              className="mt-8 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-slate-950 hover:bg-slate-100 transition"
+            >
+              Begin Screening
+            </button>
+
+            <div className="mt-10 rounded-2xl border border-amber-400/15 bg-amber-400/5 px-6 py-5 text-left">
+              <div className="flex gap-3">
+                <ShieldCheck className="mt-0.5 shrink-0 text-amber-300" size={18} />
+
+                <div>
+                  <h3 className="text-sm font-semibold text-amber-100">
+                    Medical Disclaimer & Screening Notice
+                  </h3>
+
+                  <p className="mt-2 text-xs sm:text-sm leading-6 text-amber-100/65">
+                    BioLens AI is an AI-based preliminary health-risk screening
+                    research prototype. Its outputs are model predictions and
+                    visual findings, not medical diagnoses. They should not
+                    replace professional medical advice, clinical examination,
+                    laboratory testing, or treatment.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <div className="font-semibold">BioLens AI</div>
+              <div className="mt-1 text-xs text-slate-500">
+                See Beyond the Surface.
+              </div>
+            </div>
+
+            <div className="text-xs text-slate-500 text-center sm:text-right">
+              <div>
+                Multimodal Visual Screening Research Prototype • Academic
+                Healthcare AI/ML Demonstration
+              </div>
+              <div className="mt-1">
+                © 2026 BioLens AI Research Team. All rights reserved.
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      </footer>
     </div>
   );
 };
+
+export { LandingPage };

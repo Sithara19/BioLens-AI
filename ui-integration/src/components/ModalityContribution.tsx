@@ -3,8 +3,10 @@ import {
   Eye,
   Layers,
   Smile,
+  Hand,
   Sparkles,
 } from 'lucide-react';
+
 import {
   ModalityContributions,
   ModalityType,
@@ -15,7 +17,7 @@ interface ModalityContributionProps {
   className?: string;
 }
 
-const MODALITIES: {
+interface ModalityConfig {
   key: ModalityType;
   label: string;
   color: string;
@@ -24,7 +26,10 @@ const MODALITIES: {
   borderColor: string;
   icon: React.ElementType;
   description: string;
-}[] = [
+  participatesInAnemiaFusion: boolean;
+}
+
+const MODALITIES: ModalityConfig[] = [
   {
     key: 'eye',
     label: 'Eye',
@@ -34,7 +39,8 @@ const MODALITIES: {
     borderColor: 'border-teal-200',
     icon: Eye,
     description:
-      'Visual analysis of submitted eye and lower-eyelid regions',
+      'Eye input used by the anemia fusion model.',
+    participatesInAnemiaFusion: true,
   },
   {
     key: 'tongue',
@@ -45,7 +51,8 @@ const MODALITIES: {
     borderColor: 'border-rose-200',
     icon: Smile,
     description:
-      'Visual analysis of submitted tongue surface and appearance',
+      'Processed by the separate tongue detection model.',
+    participatesInAnemiaFusion: false,
   },
   {
     key: 'nail',
@@ -56,7 +63,20 @@ const MODALITIES: {
     borderColor: 'border-sky-200',
     icon: Layers,
     description:
-      'Visual analysis of submitted fingernail and nail-bed region',
+      'Nail input used by the anemia fusion model.',
+    participatesInAnemiaFusion: true,
+  },
+  {
+    key: 'palm',
+    label: 'Palm',
+    color: 'bg-amber-500',
+    textColor: 'text-amber-700',
+    lightBg: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    icon: Hand,
+    description:
+      'Palm input used by the anemia fusion model.',
+    participatesInAnemiaFusion: true,
   },
   {
     key: 'skin',
@@ -67,7 +87,8 @@ const MODALITIES: {
     borderColor: 'border-blue-200',
     icon: Layers,
     description:
-      'Visual analysis of submitted skin color and surface characteristics',
+      'Processed by the separate skin classification model.',
+    participatesInAnemiaFusion: false,
   },
 ];
 
@@ -77,247 +98,348 @@ export const ModalityContribution: React.FC<
   contributions,
   className = '',
 }) => {
-  /**
-   * Clamp values to a safe display range.
-   *
-   * This prevents malformed backend/demo values from creating
-   * invalid bar widths.
-   */
-  const getPercentage = (modality: ModalityType): number => {
-    const value = Number(contributions[modality]);
+  const getPercentage = (
+    modality: ModalityType
+  ): number => {
+    const value = Number(
+      contributions[modality]
+    );
 
     if (!Number.isFinite(value)) {
       return 0;
     }
 
-    return Math.max(0, Math.min(100, value));
+    return Math.max(
+      0,
+      Math.min(100, value)
+    );
   };
 
-  const totalContribution = MODALITIES.reduce(
-    (total, modality) =>
-      total + getPercentage(modality.key),
-    0
-  );
+  const fusionModalities =
+    MODALITIES.filter(
+      (modality) =>
+        modality.participatesInAnemiaFusion
+    );
 
-  const analyzedModalities = MODALITIES.filter(
-    (modality) =>
-      getPercentage(modality.key) > 0
-  );
+  const totalContribution =
+    fusionModalities.reduce(
+      (total, modality) =>
+        total +
+        getPercentage(
+          modality.key
+        ),
+      0
+    );
 
-  const skippedModalities = MODALITIES.filter(
-    (modality) =>
-      getPercentage(modality.key) === 0
-  );
+  const hasFusionContribution =
+    totalContribution > 0;
 
   return (
     <div
       className={`bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs ${className}`}
     >
-      {/* ======================================================= */}
-      {/* HEADER                                                  */}
-      {/* ======================================================= */}
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+      {/* =======================================================
+          HEADER
+      ======================================================== */}
+
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-5">
+
         <div>
+
           <h3 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+
             <Layers className="w-5 h-5 text-teal-600" />
-            AI Modality Contribution
+
+            Anemia Fusion Contribution
+
           </h3>
 
-          <p className="text-xs text-slate-500 mt-0.5">
-            Contribution distribution across the modalities included
-            in multimodal fusion
+          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+
+            Ablation-based contribution of the Eye, Nail,
+            and Palm inputs to the anemia fusion model.
+
           </p>
+
         </div>
 
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 self-start sm:self-auto">
-          Dynamic Fusion Contribution
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 self-start">
+
+          Model Analysis
+
         </span>
+
       </div>
 
-      {/* ======================================================= */}
-      {/* SUBMITTED MODALITY SUMMARY                              */}
-      {/* ======================================================= */}
+      {/* =======================================================
+          ARCHITECTURE SUMMARY
+      ======================================================== */}
 
       <div className="flex flex-wrap gap-2 mb-5">
+
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 border border-teal-100 text-teal-700 text-[11px] font-semibold">
+
           <Sparkles className="w-3 h-3" />
-          {analyzedModalities.length}{' '}
-          {analyzedModalities.length === 1
-            ? 'modality'
-            : 'modalities'}{' '}
-          included
+
+          Eye + Nail + Palm
+
         </span>
 
-        {skippedModalities.length > 0 && (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-[11px] font-semibold">
-            {skippedModalities.length}{' '}
-            {skippedModalities.length === 1
-              ? 'modality'
-              : 'modalities'}{' '}
-            skipped
-          </span>
-        )}
+        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 text-[11px] font-semibold">
+
+          Tongue + Skin use separate models
+
+        </span>
+
       </div>
 
-      {/* ======================================================= */}
-      {/* STACKED VISUALIZATION BAR                               */}
-      {/* ======================================================= */}
+      {/* =======================================================
+          CONTRIBUTION BAR
+      ======================================================== */}
 
-      <div className="w-full h-4 rounded-xl overflow-hidden flex shadow-inner mb-6 p-0.5 bg-slate-100 border border-slate-200/70">
-        {MODALITIES.map((item) => {
-          const percentage =
-            getPercentage(item.key);
+      {hasFusionContribution ? (
+        <div className="mb-6">
 
-          /**
-           * Don't render a visible segment for 0%.
-           * This makes skipped modalities contribute literally
-           * nothing to the fusion bar.
-           */
-          if (percentage <= 0) {
-            return null;
-          }
+          <div className="flex items-center justify-between mb-2">
 
-          return (
-            <div
-              key={item.key}
-              className={`${item.color} h-full transition-all duration-700 first:rounded-l-lg last:rounded-r-lg relative group`}
-              style={{
-                width: `${percentage}%`,
-              }}
-              title={`${item.label}: ${percentage}%`}
-            />
-          );
-        })}
-      </div>
+            <span className="text-[11px] font-semibold text-slate-500">
+              Anemia fusion contribution
+            </span>
 
-      {/* ======================================================= */}
-      {/* FOUR MODALITY CARDS                                     */}
-      {/* ======================================================= */}
+            <span className="text-[11px] font-bold text-slate-600">
+              {Math.round(
+                totalContribution
+              )}%
+            </span>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {MODALITIES.map((item) => {
-          const Icon = item.icon;
-          const percentage =
-            getPercentage(item.key);
+          </div>
 
-          const isAnalyzed = percentage > 0;
+          <div className="w-full h-4 rounded-xl overflow-hidden flex shadow-inner p-0.5 bg-slate-100 border border-slate-200/70">
 
-          return (
-            <div
-              key={item.key}
-              className={`p-3.5 rounded-xl border flex flex-col justify-between transition-colors ${
-                isAnalyzed
-                  ? `${item.borderColor} ${item.lightBg}/40`
-                  : 'border-slate-200 bg-slate-50/70'
-              }`}
-            >
-              {/* Card header */}
-              <div className="flex items-center justify-between mb-1.5">
-                <span
-                  className={`text-xs font-semibold flex items-center gap-1.5 ${
-                    isAnalyzed
-                      ? 'text-slate-800'
-                      : 'text-slate-400'
-                  }`}
-                >
-                  <Icon
-                    className={`w-3.5 h-3.5 ${
-                      isAnalyzed
+            {fusionModalities.map(
+              (item) => {
+                const percentage =
+                  getPercentage(
+                    item.key
+                  );
+
+                if (
+                  percentage <= 0
+                ) {
+                  return null;
+                }
+
+                return (
+                  <div
+                    key={item.key}
+                    className={`${item.color} h-full transition-all duration-700 relative`}
+                    style={{
+                      width: `${percentage}%`,
+                    }}
+                    title={`${item.label}: ${percentage}%`}
+                  />
+                );
+              }
+            )}
+
+          </div>
+
+        </div>
+      ) : (
+        <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
+
+          No positive ablation contribution was returned
+          for the anemia fusion inputs in this analysis.
+
+        </div>
+      )}
+
+      {/* =======================================================
+          FIVE MODALITY CARDS
+      ======================================================== */}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+
+        {MODALITIES.map(
+          (item) => {
+            const Icon =
+              item.icon;
+
+            const percentage =
+              getPercentage(
+                item.key
+              );
+
+            const hasContribution =
+              item.participatesInAnemiaFusion &&
+              percentage > 0;
+
+            return (
+              <div
+                key={item.key}
+                className={`p-3.5 rounded-xl border flex flex-col justify-between transition-colors ${
+                  item.participatesInAnemiaFusion
+                    ? `${item.borderColor} ${item.lightBg}/40`
+                    : 'border-slate-200 bg-slate-50/70'
+                }`}
+              >
+
+                {/* CARD HEADER */}
+
+                <div className="flex items-center justify-between gap-2 mb-2">
+
+                  <span
+                    className={`text-xs font-semibold flex items-center gap-1.5 ${
+                      item.participatesInAnemiaFusion
+                        ? 'text-slate-800'
+                        : 'text-slate-400'
+                    }`}
+                  >
+
+                    <Icon
+                      className={`w-3.5 h-3.5 ${
+                        item.participatesInAnemiaFusion
+                          ? item.textColor
+                          : 'text-slate-400'
+                      }`}
+                    />
+
+                    {item.label.toUpperCase()}
+
+                  </span>
+
+                  <span
+                    className={`text-sm font-extrabold ${
+                      item.participatesInAnemiaFusion
                         ? item.textColor
                         : 'text-slate-400'
                     }`}
-                  />
+                  >
 
-                  {item.label.toUpperCase()}
-                </span>
+                    {item.participatesInAnemiaFusion
+                      ? `${percentage}%`
+                      : 'N/A'}
 
-                <span
-                  className={`text-sm font-extrabold ${
-                    isAnalyzed
-                      ? item.textColor
+                  </span>
+
+                </div>
+
+                {/* DESCRIPTION */}
+
+                <p
+                  className={`text-[11px] leading-snug ${
+                    item.participatesInAnemiaFusion
+                      ? 'text-slate-500'
                       : 'text-slate-400'
                   }`}
                 >
-                  {percentage}%
-                </span>
-              </div>
 
-              {/* Description */}
-              <p
-                className={`text-[11px] leading-snug ${
-                  isAnalyzed
-                    ? 'text-slate-500'
-                    : 'text-slate-400'
-                }`}
-              >
-                {isAnalyzed
-                  ? item.description
-                  : 'Skipped — not analyzed and no fusion contribution'}
-              </p>
+                  {item.description}
 
-              {/* Status */}
-              <div className="mt-3">
-                {isAnalyzed ? (
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-md ${item.lightBg} ${item.textColor} text-[10px] font-bold`}
-                  >
-                    ANALYZED
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-400 text-[10px] font-bold">
-                    NOT ANALYZED
-                  </span>
-                )}
+                </p>
+
+                {/* STATUS */}
+
+                <div className="mt-3">
+
+                  {item.participatesInAnemiaFusion ? (
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md ${
+                        hasContribution
+                          ? `${item.lightBg} ${item.textColor}`
+                          : 'bg-slate-100 text-slate-500'
+                      } text-[10px] font-bold`}
+                    >
+
+                      {hasContribution
+                        ? 'CONTRIBUTION'
+                        : '0% CONTRIBUTION'}
+
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-400 text-[10px] font-bold">
+
+                      SEPARATE MODEL
+
+                    </span>
+                  )}
+
+                </div>
+
               </div>
-            </div>
-          );
-        })}
+            );
+          }
+        )}
+
       </div>
 
-      {/* ======================================================= */}
-      {/* CONTRIBUTION CHECK                                      */}
-      {/* ======================================================= */}
+      {/* =======================================================
+          CONTRIBUTION CHECK
+      ======================================================== */}
 
       <div className="mt-5 flex items-center justify-between px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-200/70">
+
         <span className="text-[11px] font-semibold text-slate-500">
-          Total available contribution
+
+          Sum of reported anemia-fusion contributions
+
         </span>
 
         <span
           className={`text-xs font-extrabold ${
-            totalContribution === 100
+            Math.abs(
+              totalContribution - 100
+            ) < 0.01
               ? 'text-teal-700'
               : 'text-slate-600'
           }`}
         >
-          {totalContribution}%
+
+          {Math.round(
+            totalContribution
+          )}%
+
         </span>
+
       </div>
 
-      {/* ======================================================= */}
-      {/* SCIENTIFIC / ARCHITECTURE DISCLAIMER                    */}
-      {/* ======================================================= */}
+      {/* =======================================================
+          SCIENTIFIC NOTE
+      ======================================================== */}
 
-      <div className="mt-5 p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-[11px] text-slate-600 leading-relaxed">
+      <div className="mt-5 p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 text-[11px] text-slate-600 leading-relaxed">
+
         <strong className="text-slate-700">
-          Important Architecture Note:
+          How this is calculated:
         </strong>{' '}
-        These values represent the current prototype's
-        computational contribution allocation. A skipped modality
-        receives <strong>0%</strong> and does not participate in
-        the multimodal fusion calculation.
+
+        The anemia fusion module compares the full
+        Eye + Nail + Palm prediction with predictions
+        produced after removing one modality at a time.
+        Positive changes in the anemia probability are
+        normalized into the displayed contribution
+        percentages.
 
         <br />
         <br />
 
-        The current prototype may use normalized demonstration
-        contributions. These values must{' '}
-        <strong>not</strong> be interpreted as clinically validated
-        medical importance or organ priority. Final fusion weights
-        should be established using the trained models, validation
-        experiments, calibration, and appropriate evaluation.
+        These values describe the model's computational
+        behavior for this screening run. They do
+        <strong> not </strong>
+        represent clinical importance, diagnostic
+        evidence, or medical priority.
+
+        <br />
+        <br />
+
+        Tongue and Skin are intentionally marked as
+        <strong> separate models </strong>
+        because they are not inputs to the current
+        anemia fusion model.
+
       </div>
+
     </div>
   );
 };

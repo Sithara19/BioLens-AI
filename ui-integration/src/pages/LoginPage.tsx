@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  ArrowRight,
+  AlertCircle,
+  ShieldCheck,
+} from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { api } from '../services/api';
 import { UserProfile } from '../types';
@@ -46,11 +54,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           <div className="flex justify-center mb-2">
             <Logo size="md" />
           </div>
+
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             Sign In to BioLens
           </h2>
+
           <p className="text-xs text-slate-500">
-            Access your multimodal health screening dashboard and records
+            Access your screening workspace and saved screening records
           </p>
         </div>
 
@@ -61,13 +71,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </div>
         )}
 
-        {/* Demo credentials hint pill */}
-        <div className="p-3 bg-teal-50/60 rounded-xl border border-teal-200/60 flex items-start gap-2 text-xs text-teal-900">
-          <Sparkles className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2 text-xs text-slate-600">
+          <ShieldCheck className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
+
           <div className="space-y-0.5">
-            <span className="font-bold">Prototype Demo Access:</span>
-            <p className="text-[11px] text-teal-800">
-              Pre-filled with evaluation demo credentials. Click <strong>Login</strong> to proceed directly.
+            <span className="font-bold text-slate-700">
+              Academic Demonstration
+            </span>
+
+            <p className="text-[11px] text-slate-500">
+              This interface is part of the BioLens AI academic research
+              prototype. Screening outputs are preliminary model predictions
+              and are not medical diagnoses.
             </p>
           </div>
         </div>
@@ -78,8 +93,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             <label className="text-xs font-semibold text-slate-700 block">
               Email Address
             </label>
+
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+
               <input
                 type="email"
                 required
@@ -93,13 +110,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           {/* Password */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-700 block">
-                Password
-              </label>
-            </div>
+            <label className="text-xs font-semibold text-slate-700 block">
+              Password
+            </label>
+
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
@@ -108,12 +125,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 placeholder="••••••••••••"
                 className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
@@ -123,7 +146,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             disabled={loading}
             className="w-full py-3 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20 transition-all disabled:opacity-50 mt-2"
           >
-            {loading ? 'Authenticating...' : 'Login to Dashboard'}
+            {loading ? 'Signing In...' : 'Login to Dashboard'}
+
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>

@@ -8,8 +8,8 @@ import {
   Eye,
   Smile,
   Layers,
-  Cpu,
-  GitMerge,
+  Hand,
+  Sparkles,
   CheckCircle2,
   Loader2,
   SkipForward,
@@ -23,14 +23,17 @@ import {
 import { api } from '../services/api';
 
 interface AnalysisPageProps {
-  images: Record<
-    ModalityType,
-    string
-  >;
+  images: Record<ModalityType, string>;
   onAnalysisComplete: (
     result: ScreeningResult
   ) => void;
 }
+
+type AnalysisPhase =
+  | 'initializing'
+  | 'processing'
+  | 'fusion'
+  | 'complete';
 
 export const AnalysisPage: React.FC<
   AnalysisPageProps
@@ -38,23 +41,14 @@ export const AnalysisPage: React.FC<
   images,
   onAnalysisComplete,
 }) => {
-  // =========================================================
-  // PHASE
-  //
-  // 0 = Initializing
-  // 1 = First available modality
-  // 2 = Second available modality
-  // 3 = Third available modality
-  // 4 = Fourth available modality
-  // 5 = Multimodal Fusion
-  // 6 = Completed
-  // =========================================================
-
   const [phase, setPhase] =
-    useState<number>(0);
+    useState<AnalysisPhase>('initializing');
+
+  const [currentModalityIndex, setCurrentModalityIndex] =
+    useState<number>(-1);
 
   const [progress, setProgress] =
-    useState<number>(10);
+    useState<number>(8);
 
   const [error, setError] =
     useState<string | null>(null);
@@ -77,97 +71,121 @@ export const AnalysisPage: React.FC<
     eye: {
       label: 'Eye',
       target:
-        'Eye and eyelid color & clarity analysis',
+        'Eye image screening for diabetes and jaundice',
       model:
-        'BioLens Vision Model (Eye)',
+        'ViT-Tiny — Diabetes + Jaundice',
       icon: Eye,
     },
 
     tongue: {
       label: 'Tongue',
       target:
-        'Tongue surface color & visual pattern analysis',
+        'Tongue surface visual finding detection',
       model:
-        'BioLens Vision Model (Tongue)',
+        'YOLO11 Nano — Tongue Detection',
       icon: Smile,
     },
 
     nail: {
       label: 'Nail',
       target:
-        'Fingernail and nail bed color analysis',
+        'Fingernail and nail-bed visual screening',
       model:
-        'BioLens Vision Model (Nail)',
+        'ViT-Tiny — Nail Classification',
       icon: Layers,
+    },
+
+    palm: {
+      label: 'Palm',
+      target:
+        'Palm image used in anemia screening',
+      model:
+        'ViT-Tiny — Anemia Fusion Input',
+      icon: Hand,
     },
 
     skin: {
       label: 'Skin',
       target:
-        'Skin tone and surface analysis',
+        'Skin image visual finding screening',
       model:
-        'BioLens Vision Model (Skin)',
-      icon: Layers,
+        'EfficientNet-B0 — Skin Classification',
+      icon: Sparkles,
     },
   };
 
   // =========================================================
-  // DETERMINE WHICH MODALITIES ARE AVAILABLE
-  //
-  // IMPORTANT:
-  // Empty string means skipped/not provided.
-  // Those modalities are excluded from analysis.
+  // MODALITY ORDER
+  // =========================================================
+
+  const allModalities =
+    useMemo(
+      () =>
+        [
+          'eye',
+          'tongue',
+          'nail',
+          'palm',
+          'skin',
+        ] as ModalityType[],
+      []
+    );
+
+  // =========================================================
+  // AVAILABLE / SKIPPED MODALITIES
   // =========================================================
 
   const availableModalities =
     useMemo(
       () =>
-        (
-          [
-            'eye',
-            'tongue',
-            'nail',
-            'skin',
-          ] as ModalityType[]
-        ).filter(
+        allModalities.filter(
           (modality) =>
             Boolean(images[modality])
         ),
-      [images]
+      [allModalities, images]
     );
 
   const skippedModalities =
     useMemo(
       () =>
-        (
-          [
-            'eye',
-            'tongue',
-            'nail',
-            'skin',
-          ] as ModalityType[]
-        ).filter(
+        allModalities.filter(
           (modality) =>
             !images[modality]
         ),
-      [images]
+      [allModalities, images]
     );
 
   const availableCount =
     availableModalities.length;
 
   // =========================================================
-  // ANALYSIS PIPELINE
+  // REAL ANALYSIS PIPELINE
+  //
+  // The frontend stages are visual progress indicators.
+  // The actual model inference is performed by the FastAPI
+  // backend through api.analyzeScreening().
   // =========================================================
 
   useEffect(() => {
     let isMounted = true;
 
+    const wait = (
+      milliseconds: number
+    ) =>
+      new Promise<void>(
+        (resolve) =>
+          setTimeout(
+            resolve,
+            milliseconds
+          )
+      );
+
     const runAnalysis = async () => {
       try {
         setError(null);
-        setPhase(0);
-        setProgress(10);
+        setPhase('initializing');
+        setCurrentModalityIndex(-1);
+        setProgress(8);
 
         // -----------------------------------------------------
         // SAFETY CHECK
@@ -183,8 +201,22 @@ export const AnalysisPage: React.FC<
         }
 
         // -----------------------------------------------------
-        // PROCESS ONLY AVAILABLE MODALITIES
+        // INITIALIZATION
         // -----------------------------------------------------
+
+        await wait(450);
+
+        if (!isMounted) return;
+
+        // -----------------------------------------------------
+        // VISUAL MODALITY STAGES
+        //
+        // These represent the modalities included in the
+        // submitted request. Actual inference is performed
+        // together by the backend API call below.
+        // -----------------------------------------------------
+
+        setPhase('processing');
 
         for (
           let index = 0;
@@ -192,127 +224,87 @@ export const AnalysisPage: React.FC<
           availableModalities.length;
           index++
         ) {
-          const modality =
-            availableModalities[
-              index
-            ];
-
           if (!isMounted) return;
 
-          /*
-           * Phase 1-4 represents the position
-           * of the currently processed available
-           * modality.
-           */
-          const modalityPhase =
-            index + 1;
+          setCurrentModalityIndex(index);
 
-          setPhase(
-            modalityPhase
-          );
-
-          /*
-           * Reserve the first ~85% of the
-           * progress bar for modality processing.
-           */
-          const modalityProgress =
-            20 +
+          const progressValue =
+            15 +
             Math.round(
               ((index + 1) /
                 availableModalities.length) *
-                65
+                55
             );
 
           setProgress(
-            modalityProgress
+            progressValue
           );
 
-          /*
-           * Placeholder delay for the current
-           * frontend demo.
-           *
-           * Later this section will call the
-           * corresponding trained model/API.
-           */
-          await new Promise(
-            (resolve) =>
-              setTimeout(
-                resolve,
-                750
-              )
-          );
+          await wait(500);
 
-          if (!isMounted)
-            return;
-
-          console.log(
-            `Processing modality: ${modality}`
-          );
+          if (!isMounted) return;
         }
 
         // -----------------------------------------------------
-        // MULTIMODAL FUSION
+        // BACKEND ANALYSIS / FUSION
         // -----------------------------------------------------
 
         if (!isMounted) return;
 
-        setPhase(5);
-        setProgress(92);
+        setPhase('fusion');
+        setCurrentModalityIndex(-1);
+        setProgress(78);
 
         /*
-         * The API receives the complete image object.
+         * This is the real model-serving call.
          *
-         * The backend/service layer is responsible for
-         * considering only non-empty modalities.
+         * api.analyzeScreening() sends the available images
+         * to the FastAPI backend. The backend runs:
+         *
+         * Eye    -> Diabetes + Jaundice
+         * Eye +
+         * Nail +
+         * Palm   -> Anemia fusion
+         * Nail   -> Nail classifier
+         * Skin   -> Skin classifier
+         * Tongue -> Tongue detector
+         *
+         * Only supplied modalities are processed.
          */
         const result =
           await api.analyzeScreening(
             images
           );
 
-        /*
-         * Small delay so the user can see the
-         * fusion stage in the UI.
-         */
-        await new Promise(
-          (resolve) =>
-            setTimeout(
-              resolve,
-              900
-            )
-        );
+        if (!isMounted) return;
 
-        if (!isMounted)
-          return;
+        setProgress(94);
+
+        await wait(500);
+
+        if (!isMounted) return;
 
         // -----------------------------------------------------
-        // COMPLETED
+        // COMPLETE
         // -----------------------------------------------------
 
-        setPhase(6);
+        setPhase('complete');
         setProgress(100);
 
-        await new Promise(
-          (resolve) =>
-            setTimeout(
-              resolve,
-              400
-            )
-        );
+        await wait(650);
 
-        if (!isMounted)
-          return;
+        if (!isMounted) return;
 
         onAnalysisComplete(
           result
         );
       } catch (err: any) {
-        if (isMounted) {
-          setError(
-            err?.message ||
-              'An error occurred during analysis.'
-          );
-        }
+        if (!isMounted) return;
+
+        setError(
+          err?.message ||
+            'An error occurred during analysis.'
+        );
       }
     };
 
@@ -328,32 +320,21 @@ export const AnalysisPage: React.FC<
   ]);
 
   // =========================================================
-  // CARD DATA
-  //
-  // ALL FOUR MODALITIES ARE DISPLAYED.
-  // A skipped modality is visibly excluded.
+  // STATUS HELPERS
   // =========================================================
 
-  const cards: {
-    key: ModalityType;
-    label: string;
-    target: string;
-    model: string;
-    icon: React.ComponentType<{
-      className?: string;
-    }>;
-  }[] =
-    (
-      [
-        'eye',
-        'tongue',
-        'nail',
-        'skin',
-      ] as ModalityType[]
-    ).map((key) => ({
-      key,
-      ...modalityInfo[key],
-    }));
+  const isProcessing =
+    phase === 'processing';
+
+  const isFusion =
+    phase === 'fusion';
+
+  const isComplete =
+    phase === 'complete';
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8 animate-in fade-in duration-300">
@@ -366,25 +347,37 @@ export const AnalysisPage: React.FC<
 
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-50 border border-teal-200/80 text-teal-800 text-xs font-semibold">
 
-          <Cpu className="w-3.5 h-3.5 text-teal-600 animate-spin" />
+          {isComplete ? (
+            <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+          ) : (
+            <Loader2 className="w-3.5 h-3.5 text-teal-600 animate-spin" />
+          )}
 
-          Neural Pipeline Execution
+          {isComplete
+            ? 'Screening Complete'
+            : 'BioLens Analysis Pipeline'}
 
         </div>
 
         <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Analyzing Your Images
+
+          {isComplete
+            ? 'Analysis Complete'
+            : 'Analyzing Your Images'}
+
         </h2>
 
         <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto">
-          BioLens is analyzing only the
-          image modalities you provided.
-          Skipped modalities are excluded
-          from the screening pipeline.
+
+          BioLens processes only the image
+          modalities you provided. Model
+          outputs are screening results and
+          visual findings, not medical diagnoses.
+
         </p>
 
         {/* =================================================
-            AVAILABLE MODALITY SUMMARY
+            MODALITY SUMMARY
         ================================================== */}
 
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
@@ -416,7 +409,7 @@ export const AnalysisPage: React.FC<
         </div>
 
         {/* =================================================
-            GLOBAL PROGRESS BAR
+            GLOBAL PROGRESS
         ================================================== */}
 
         <div className="w-full max-w-md mx-auto pt-2 space-y-1.5">
@@ -424,7 +417,7 @@ export const AnalysisPage: React.FC<
           <div className="flex items-center justify-between text-xs">
 
             <span className="font-semibold text-slate-500">
-              Pipeline Execution
+              Pipeline Progress
             </span>
 
             <span className="font-bold text-teal-700">
@@ -454,60 +447,65 @@ export const AnalysisPage: React.FC<
 
       {error && (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs text-center">
-          {error}
+
+          <p className="font-semibold mb-1">
+            Analysis could not be completed
+          </p>
+
+          <p>
+            {error}
+          </p>
+
         </div>
       )}
 
       {/* =====================================================
-          MODALITY PROCESSING CARDS
+          MODALITY CARDS
       ====================================================== */}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-        {cards.map(
-          (card, index) => {
+        {allModalities.map(
+          (modality) => {
+            const card =
+              modalityInfo[
+                modality
+              ];
+
             const Icon =
               card.icon;
 
             const isAvailable =
               Boolean(
-                images[
-                  card.key
-                ]
+                images[modality]
               );
 
-            /*
-             * If skipped, it should never be
-             * considered current or complete.
-             */
             const isSkipped =
               !isAvailable;
 
             const availableIndex =
               availableModalities.findIndex(
-                (modality) =>
-                  modality ===
-                  card.key
+                (item) =>
+                  item === modality
               );
 
-            const cardPhase =
-              availableIndex >= 0
-                ? availableIndex + 1
-                : -1;
+            const isCurrent =
+              isProcessing &&
+              availableIndex >= 0 &&
+              availableIndex ===
+                currentModalityIndex;
 
             const isDone =
-              isAvailable &&
-              phase >
-                cardPhase;
-
-            const isCurrent =
-              isAvailable &&
-              phase ===
-                cardPhase;
+              isComplete ||
+              (isProcessing &&
+                availableIndex >= 0 &&
+                availableIndex <
+                  currentModalityIndex) ||
+              isFusion;
 
             return (
               <div
-                key={card.key}
+                key={modality}
                 className={`p-5 rounded-2xl border transition-all duration-300 flex items-center justify-between ${
                   isSkipped
                     ? 'bg-slate-50 border-slate-200 opacity-60'
@@ -519,9 +517,7 @@ export const AnalysisPage: React.FC<
                 }`}
               >
 
-                {/* =================================================
-                    LEFT SIDE
-                ================================================== */}
+                {/* LEFT */}
 
                 <div className="flex items-center gap-3.5 min-w-0">
 
@@ -563,9 +559,7 @@ export const AnalysisPage: React.FC<
 
                 </div>
 
-                {/* =================================================
-                    RIGHT STATUS
-                ================================================== */}
+                {/* RIGHT STATUS */}
 
                 <div className="shrink-0 ml-3">
 
@@ -609,7 +603,7 @@ export const AnalysisPage: React.FC<
       </div>
 
       {/* =====================================================
-          SKIPPED MODALITIES INFORMATION
+          SKIPPED MODALITIES
       ====================================================== */}
 
       {skippedModalities.length >
@@ -640,15 +634,9 @@ export const AnalysisPage: React.FC<
                 ? 'was'
                 : 'were'}{' '}
 
-              not provided.{' '}
-
-              {skippedModalities.length ===
-              1
-                ? 'It will'
-                : 'They will'}{' '}
-
-              not be analyzed or contribute
-              to multimodal fusion.
+              not provided and will not be
+              processed by the corresponding
+              model.
 
             </p>
 
@@ -658,12 +646,12 @@ export const AnalysisPage: React.FC<
       )}
 
       {/* =====================================================
-          MULTIMODAL FUSION
+          ANALYSIS / FUSION STATUS
       ====================================================== */}
 
       <div
         className={`p-6 sm:p-7 rounded-3xl border transition-all duration-300 ${
-          phase >= 5
+          isFusion || isComplete
             ? 'bg-gradient-to-r from-teal-900 via-slate-900 to-cyan-950 text-white border-teal-500/50 shadow-xl'
             : 'bg-white border-slate-200 opacity-60 text-slate-800'
         }`}
@@ -675,12 +663,14 @@ export const AnalysisPage: React.FC<
 
             <div
               className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                phase >= 5
+                isFusion || isComplete
                   ? 'bg-teal-500/20 text-teal-300 border border-teal-400/30'
                   : 'bg-slate-100 text-slate-400'
               }`}
             >
-              <GitMerge className="w-6 h-6" />
+
+              <Sparkles className="w-6 h-6" />
+
             </div>
 
             <div>
@@ -688,10 +678,11 @@ export const AnalysisPage: React.FC<
               <div className="flex items-center gap-2">
 
                 <h3 className="text-lg font-bold tracking-tight">
-                  Multimodal Fusion
+                  Model Analysis
                 </h3>
 
-                {phase >= 5 && (
+                {(isFusion ||
+                  isComplete) && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-400/20 text-teal-300 border border-teal-400/40">
                     ACTIVE
                   </span>
@@ -701,12 +692,17 @@ export const AnalysisPage: React.FC<
 
               <p
                 className={`text-xs mt-0.5 ${
-                  phase >= 5
+                  isFusion ||
+                  isComplete
                     ? 'text-slate-300'
                     : 'text-slate-500'
                 }`}
               >
-                Combining information only from the available visual modalities.
+
+                {isComplete
+                  ? 'Model outputs have been generated successfully.'
+                  : 'Running the BioLens model pipeline on the submitted images.'}
+
               </p>
 
             </div>
@@ -715,30 +711,25 @@ export const AnalysisPage: React.FC<
 
           <div className="flex-shrink-0">
 
-            {phase >= 6 ? (
+            {isComplete ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-500 text-slate-950 shadow-md">
 
                 <CheckCircle2 className="w-4 h-4" />
 
-                Fusion Complete
+                Analysis Complete
 
               </span>
-            ) : phase === 5 ? (
+            ) : isFusion ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-teal-200 border border-white/20">
 
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-300" />
 
-                Combining{' '}
-                {availableCount}{' '}
-                {availableCount === 1
-                  ? 'Modality'
-                  : 'Modalities'}
-                ...
+                Finalizing Results...
 
               </span>
             ) : (
               <span className="text-xs text-slate-400">
-                Waiting for models
+                Processing
               </span>
             )}
 
@@ -749,15 +740,15 @@ export const AnalysisPage: React.FC<
       </div>
 
       {/* =====================================================
-          DEMO NOTICE
+          SCREENING NOTICE
       ====================================================== */}
 
       <div className="text-center">
 
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold bg-slate-50 text-slate-600 border border-slate-200">
 
-          Demo Mode — AI models simulated locally
-          (ready for FastAPI model serving backend)
+          Screening prototype • Model outputs are
+          not medical diagnoses
 
         </span>
 

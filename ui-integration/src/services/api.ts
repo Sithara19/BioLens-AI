@@ -3,23 +3,34 @@ import {
   ScreeningResult,
   UserProfile,
   ScreeningHistoryItem,
+  BackendAnalyzeResponse,
+  Prediction,
 } from '../types';
-import { runDemoAnalysis } from './demoAnalysis';
 import { storage } from './storage';
 
 /**
  * BioLens AI Service Layer
  *
- * Handles communication with the FastAPI backend.
+ * Handles communication with the real FastAPI backend.
  *
- * Important multimodal rule:
- * - Only submitted images are analyzed.
- * - Skipped modalities are excluded from the analysis request.
- * - Skipped modalities always have contribution = 0.
- * - The remaining available modalities may be normalized for fusion.
+ * Supported modalities:
+ * - Eye
+ * - Tongue
+ * - Nail
+ * - Palm
+ * - Skin
  *
- * The current frontend can fall back to demo inference while the
- * FastAPI/deep-learning backend is being developed.
+ * Backend analysis:
+ * - Eye -> Diabetes
+ * - Eye -> Jaundice
+ * - Eye + Nail + Palm -> Anemia
+ * - Nail -> Nail Disease
+ * - Skin -> Skin Disease
+ * - Tongue -> Tongue Findings
+ *
+ * IMPORTANT:
+ * This service does NOT fall back to simulated/demo inference.
+ * If the real backend is unavailable, analysis fails clearly.
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -28,6 +39,7 @@ const ALL_MODALITIES: ModalityType[] = [
   'eye',
   'tongue',
   'nail',
+  'palm',
   'skin',
 ];
 
@@ -69,165 +81,295 @@ class BioLensApiClient {
   }
 
   /**
-   * Ensure the result always contains all four modality keys.
+   * Convert a backend probability into the old frontend riskLevel field.
    *
-   * Missing/skipped modalities receive:
-   * - empty image
-   * - contribution = 0
+   * This is TEMPORARY compatibility for the existing Prediction type.
+   *
+   * IMPORTANT:
+   * These are NOT clinical risk levels.
+   * The actual UI will later be changed to display
+   * "Model Probability" instead of medical risk labels.
    */
-  private normalizeResult(
-    result: ScreeningResult,
+  private getCompatibilityRiskLevel(): 'low' | 'moderate' | 'high' {
+    return 'moderate';
+  }
+
+  /**
+   * Build a frontend Prediction object.
+   */
+  private createPrediction(
+    condition: string,
+    probability: number,
+    modalities: ModalityType[],
+    description: string,
+    observedFeatures?: string[]
+  ): Prediction {
+    return {
+      condition,
+      probability,
+      riskLevel: this.getCompatibilityRiskLevel(),
+      modalities,
+      description,
+      observedFeatures,
+    };
+  }
+
+  /**
+   * Convert the REAL FastAPI response into the frontend
+   * ScreeningResult structure.
+   *
+   * No predictions are invented here.
+   * Only modules actually returned by the backend are included.
+   */
+  private transformBackendResult(
+    backendResponse: BackendAnalyzeResponse,
     originalImages: Record<ModalityType, string>
   ): ScreeningResult {
-    const availableModalities = ALL_MODALITIES.filter(
-      (modality) =>
-        typeof originalImages[modality] === 'string' &&
-        originalImages[modality].trim().length > 0
-    );
+    const backend = backendResponse.results;
 
-    const skippedModalities = ALL_MODALITIES.filter(
-      (modality) => !availableModalities.includes(modality)
-    );
+    const predictions: Prediction[] = [];
 
-    /**
-     * Keep the four image slots in the result.
-     * A skipped modality remains empty and is never treated as normal.
+    /*
+     * ----------------------------------------------------------
+     * DIABETES
+     * Eye image -> Diabetes ViT-Tiny
+     * ----------------------------------------------------------
+     */
+    if (backend.diabetes) {
+      const diabetes = backend.diabetes;
+
+      predictions.push(
+        this.createPrediction(
+          `Diabetes Screening: ${diabetes.predicted_class}`,
+          diabetes.diabetes_probability,
+          ['eye'],
+          `The eye image was processed by the BioLens diabetes screening model. Model prediction: ${diabetes.predicted_class}.`,
+          [
+            `Healthy model probability: ${(
+              diabetes.class_probabilities.Healthy * 100
+            ).toFixed(2)}%`,
+            `Diabetes model probability: ${(
+              diabetes.class_probabilities.Diabetes * 100
+            ).toFixed(2)}%`,
+          ]
+        )
+      );
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * JAUNDICE
+     * Eye image -> Jaundice ViT-Tiny
+     * ----------------------------------------------------------
+     */
+    if (backend.jaundice) {
+      const jaundice = backend.jaundice;
+
+      predictions.push(
+        this.createPrediction(
+          `Jaundice Screening: ${jaundice.predicted_class}`,
+          jaundice.jaundice_probability,
+          ['eye'],
+          `The eye image was processed by the BioLens jaundice screening model. Model prediction: ${jaundice.predicted_class}.`,
+          [
+            `Healthy model probability: ${(
+              jaundice.class_probabilities.Healthy * 100
+            ).toFixed(2)}%`,
+            `Jaundice model probability: ${(
+              jaundice.class_probabilities.Jaundice * 100
+            ).toFixed(2)}%`,
+          ]
+        )
+      );
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * ANEMIA
+     * Eye + Nail + Palm -> Mask-Aware Fusion Model
+     * ----------------------------------------------------------
+     */
+    if (backend.anemia) {
+      const anemia = backend.anemia;
+
+      predictions.push(
+        this.createPrediction(
+          `Anemia Screening: ${anemia.predicted_class}`,
+          anemia.anemia_probability,
+          ['eye', 'nail', 'palm'],
+          `The Eye, Nail, and Palm images were processed together by the BioLens anemia fusion model. Model prediction: ${anemia.predicted_class}.`,
+          [
+            `Anemia model probability: ${(
+              anemia.anemia_probability * 100
+            ).toFixed(2)}%`,
+            `Decision threshold: ${(
+              anemia.threshold * 100
+            ).toFixed(2)}%`,
+          ]
+        )
+      );
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * NAIL DISEASE
+     * Nail image -> ViT-Tiny
+     * ----------------------------------------------------------
+     */
+    if (backend.nail) {
+      const nail = backend.nail;
+
+      const nailProbabilities = Object.entries(
+        nail.class_probabilities
+      )
+        .sort(
+          ([, probabilityA], [, probabilityB]) =>
+            probabilityB - probabilityA
+        )
+        .slice(0, 3)
+        .map(
+          ([label, probability]) =>
+            `${label}: ${(probability * 100).toFixed(2)}%`
+        );
+
+      predictions.push(
+        this.createPrediction(
+          `Nail Screening: ${nail.predicted_class}`,
+          nail.predicted_class_probability,
+          ['nail'],
+          `The nail image was processed by the BioLens nail screening model. Model prediction: ${nail.predicted_class}.`,
+          nailProbabilities
+        )
+      );
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * SKIN DISEASE
+     * Skin image -> EfficientNet-B0
+     * ----------------------------------------------------------
+     */
+    if (backend.skin) {
+      const skin = backend.skin;
+
+      const skinProbabilities = Object.entries(
+        skin.class_probabilities
+      )
+        .sort(
+          ([, probabilityA], [, probabilityB]) =>
+            probabilityB - probabilityA
+        )
+        .slice(0, 3)
+        .map(
+          ([label, probability]) =>
+            `${label}: ${(probability * 100).toFixed(2)}%`
+        );
+
+      predictions.push(
+        this.createPrediction(
+          `Skin Screening: ${skin.predicted_class}`,
+          skin.predicted_class_probability,
+          ['skin'],
+          `The skin image was processed by the BioLens skin screening model. Model prediction: ${skin.predicted_class}.`,
+          skinProbabilities
+        )
+      );
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * TONGUE
+     * Tongue image -> YOLO detection model
+     * ----------------------------------------------------------
+     *
+     * Tongue confidence is detection confidence.
+     * It is NOT treated as classification probability or accuracy.
+     */
+    if (backend.tongue) {
+      const tongue = backend.tongue;
+
+      if (
+        tongue.detection_count > 0
+      ) {
+        const topDetection = tongue.detections
+          .slice()
+          .sort(
+            (a, b) => b.confidence - a.confidence
+          )[0];
+
+        predictions.push(
+          this.createPrediction(
+            `Tongue Finding: ${topDetection.label}`,
+            topDetection.confidence,
+            ['tongue'],
+            `The tongue image was processed by the BioLens tongue detection model. Observed model finding: ${topDetection.label}.`,
+            [
+              `Detection confidence: ${(
+                topDetection.confidence * 100
+              ).toFixed(2)}%`,
+              `Total detections: ${tongue.detection_count}`,
+            ]
+          )
+        );
+      } else if (tongue.detection_count === 0) {
+        /*
+         * No detection is not treated as "Healthy".
+         * We simply do not create a disease/finding prediction.
+         */
+      }
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * IMAGE STRUCTURE
+     * ----------------------------------------------------------
+     *
+     * Always keep all five modality keys.
+     * Skipped modalities remain empty.
      */
     const normalizedImages: Record<ModalityType, string> = {
       eye: originalImages.eye || '',
       tongue: originalImages.tongue || '',
       nail: originalImages.nail || '',
+      palm: originalImages.palm || '',
       skin: originalImages.skin || '',
     };
 
-    /**
-     * Remove skipped modalities from prediction metadata.
+    /*
+     * ----------------------------------------------------------
+     * ANEMIA CONTRIBUTIONS
+     * ----------------------------------------------------------
      *
-     * This prevents a skipped body part from appearing as if it
-     * contributed to a prediction.
+     * These come ONLY from the backend's actual ablation-based
+     * anemia fusion calculation.
+     *
+     * They are NOT clinical importance scores.
+     *
+     * Other modalities are 0 because they are not part of the
+     * anemia fusion model.
      */
-    const normalizedPredictions = (result.predictions || [])
-      .map((prediction) => {
-        const validModalities = (prediction.modalities || []).filter(
-          (modality) => availableModalities.includes(modality)
-        );
-
-        return {
-          ...prediction,
-          modalities: validModalities,
-        };
-      })
-      .filter((prediction) => prediction.modalities.length > 0);
-
-    /**
-     * Normalize modality contributions.
-     *
-     * The important rule is that skipped modalities ALWAYS equal 0.
-     *
-     * If the backend supplies meaningful modality weights, preserve
-     * their relative proportions and normalize them across the
-     * available modalities.
-     *
-     * If no usable weights are supplied, use equal contribution
-     * temporarily for the prototype.
-     *
-     * These are NOT clinical weights. Real fusion weights should
-     * eventually come from validated model/calibration experiments.
-     */
-    const rawContributions = result.modalityContributions || {
-      eye: 0,
+    const modalityContributions = {
+      eye: backend.anemia?.contributions.eye || 0,
       tongue: 0,
-      nail: 0,
+      nail: backend.anemia?.contributions.nail || 0,
+      palm: backend.anemia?.contributions.palm || 0,
       skin: 0,
     };
 
-    const availableRawWeights = availableModalities.map(
-      (modality) => Number(rawContributions[modality]) || 0
+    /*
+     * ----------------------------------------------------------
+     * SKIPPED MODALITIES
+     * ----------------------------------------------------------
+     */
+    const availableModalities = ALL_MODALITIES.filter(
+      (modality) =>
+        typeof normalizedImages[modality] === 'string' &&
+        normalizedImages[modality].trim().length > 0
     );
 
-    const rawWeightSum = availableRawWeights.reduce(
-      (sum, weight) => sum + weight,
-      0
+    const skippedModalities = ALL_MODALITIES.filter(
+      (modality) => !availableModalities.includes(modality)
     );
-
-    const normalizedContributions: Record<ModalityType, number> = {
-      eye: 0,
-      tongue: 0,
-      nail: 0,
-      skin: 0,
-    };
-
-    if (availableModalities.length > 0) {
-      if (rawWeightSum > 0) {
-        availableModalities.forEach((modality) => {
-          const weight = Number(rawContributions[modality]) || 0;
-
-          normalizedContributions[modality] = Math.round(
-            (weight / rawWeightSum) * 100
-          );
-        });
-
-        /**
-         * Correct rounding so available contributions add exactly to 100.
-         */
-        const currentTotal = availableModalities.reduce(
-          (sum, modality) => sum + normalizedContributions[modality],
-          0
-        );
-
-        if (currentTotal !== 100) {
-          const correctionModality = availableModalities[0];
-
-          normalizedContributions[correctionModality] +=
-            100 - currentTotal;
-        }
-      } else {
-        /**
-         * Temporary prototype fallback:
-         * equal contribution among available modalities.
-         */
-        const equalWeight = Math.floor(
-          100 / availableModalities.length
-        );
-
-        let remaining = 100;
-
-        availableModalities.forEach((modality, index) => {
-          if (index === availableModalities.length - 1) {
-            normalizedContributions[modality] = remaining;
-          } else {
-            normalizedContributions[modality] = equalWeight;
-            remaining -= equalWeight;
-          }
-        });
-      }
-    }
-
-    /**
-     * Make sure skipped modalities explicitly remain zero.
-     */
-    skippedModalities.forEach((modality) => {
-      normalizedContributions[modality] = 0;
-    });
-
-    /**
-     * If every submitted image produced no meaningful prediction,
-     * use a neutral screening statement instead of inventing a disease.
-     */
-    const hasPredictions = normalizedPredictions.length > 0;
-
-    const normalizedAssessment = result.overallAssessment || {
-      summary: '',
-      primaryObservedPatterns: [],
-      recommendedFollowUp: '',
-    };
-
-    let summary = normalizedAssessment.summary;
-
-    if (!hasPredictions) {
-      summary =
-        'No significant visual risk indicators were identified in the submitted images.';
-    }
 
     const skippedText =
       skippedModalities.length > 0
@@ -236,36 +378,64 @@ class BioLensApiClient {
               (modality) =>
                 `${modality.charAt(0).toUpperCase()}${modality.slice(1)}`
             )
-            .join(', ')} ${skippedModalities.length === 1 ? 'was' : 'were'} skipped and not analyzed.`
+            .join(', ')} ${
+            skippedModalities.length === 1 ? 'was' : 'were'
+          } skipped and not analyzed.`
         : '';
 
-    /**
-     * Always keep the screening disclaimer in the final service result.
+    /*
+     * ----------------------------------------------------------
+     * OVERALL ASSESSMENT
+     * ----------------------------------------------------------
+     *
+     * This is a neutral screening summary.
+     * It does not claim diagnosis.
      */
-    const recommendedFollowUp =
-      normalizedAssessment.recommendedFollowUp ||
-      'This is a preliminary visual screening result, not a medical diagnosis. Consult a qualified healthcare professional if you have symptoms or concerns.';
+    let summary: string;
 
+    if (predictions.length === 0) {
+      summary =
+        'No model findings were returned for the submitted images.';
+    } else {
+      summary = `BioLens processed ${predictions.length} model output${
+        predictions.length === 1 ? '' : 's'
+      } from the submitted body images. These are model predictions from a research screening prototype and are not medical diagnoses.`;
+    }
+
+    summary += skippedText;
+
+    const primaryObservedPatterns = predictions.map(
+      (prediction) => prediction.condition
+    );
+
+    /*
+     * ----------------------------------------------------------
+     * FINAL SCREENING RESULT
+     * ----------------------------------------------------------
+     */
     return {
-      ...result,
+      sessionId: `screening_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+
+      predictions,
+
+      modalityContributions,
 
       images: normalizedImages,
 
-      predictions: normalizedPredictions,
-
-      modalityContributions: normalizedContributions,
+      /*
+       * This came from the real FastAPI backend.
+       */
+      isDemoMode: false,
 
       overallAssessment: {
-        ...normalizedAssessment,
-        summary: `${summary}${skippedText}`,
-        recommendedFollowUp,
-      },
+        summary,
 
-      /**
-       * Current frontend implementation is still operating as a
-       * prototype until the actual trained backend models are connected.
-       */
-      isDemoMode: result.isDemoMode ?? true,
+        primaryObservedPatterns,
+
+        recommendedFollowUp:
+          'BioLens provides preliminary visual screening outputs from trained machine-learning models. These results are not a medical diagnosis. Consult a qualified healthcare professional if you have symptoms, concerns, or need clinical evaluation.',
+      },
     };
   }
 
@@ -287,6 +457,9 @@ class BioLensApiClient {
 
   /**
    * User Registration -> POST /api/auth/signup
+   *
+   * Existing local fallback is retained because authentication
+   * is outside the current model-integration task.
    */
   async signup(data: {
     name: string;
@@ -312,7 +485,6 @@ class BioLensApiClient {
       // Fall through to local persistence for prototype.
     }
 
-    // Local prototype fallback.
     const user: UserProfile = {
       name: data.name,
       email: data.email,
@@ -354,7 +526,6 @@ class BioLensApiClient {
       // Fall through to local fallback.
     }
 
-    // Local prototype fallback.
     let user = storage.getUser();
 
     if (!user || user.email !== email) {
@@ -476,24 +647,21 @@ class BioLensApiClient {
   /**
    * Run Multimodal Analysis -> POST /api/analyze
    *
-   * IMPORTANT:
-   * Only modalities containing an actual image are sent to the
-   * analysis pipeline.
+   * This uses ONLY the real FastAPI backend.
    *
-   * Example:
+   * Available images are sent as base64 Data URLs:
    *
-   * Eye   -> image
-   * Tongue -> skipped
-   * Nail  -> image
-   * Skin  -> skipped
-   *
-   * Backend receives:
    * {
-   *   eye: "...",
-   *   nail: "..."
+   *   images: {
+   *     eye: "...",
+   *     tongue: "...",
+   *     nail: "...",
+   *     palm: "...",
+   *     skin: "..."
+   *   }
    * }
    *
-   * Tongue and Skin are NOT analyzed.
+   * Skipped modalities are omitted from the request.
    */
   async analyzeScreening(
     images: Record<ModalityType, string>
@@ -502,11 +670,10 @@ class BioLensApiClient {
 
     const availableCount = Object.keys(availableImages).length;
 
-    /**
+    /*
      * Defensive check.
      *
-     * Analysis should normally never be started with zero images,
-     * because AnalysisPage already prevents this.
+     * AnalysisPage should normally prevent this situation.
      */
     if (availableCount === 0) {
       const emptyResult: ScreeningResult = {
@@ -519,6 +686,7 @@ class BioLensApiClient {
           eye: 0,
           tongue: 0,
           nail: 0,
+          palm: 0,
           skin: 0,
         },
 
@@ -526,82 +694,118 @@ class BioLensApiClient {
           eye: '',
           tongue: '',
           nail: '',
+          palm: '',
           skin: '',
         },
 
-        isDemoMode: true,
+        isDemoMode: false,
 
         overallAssessment: {
           summary:
             'No images were submitted for visual screening.',
           primaryObservedPatterns: [],
           recommendedFollowUp:
-            'Please submit at least one supported image if you want to perform a screening. This system provides preliminary screening only and is not a medical diagnosis.',
+            'Please submit at least one supported image to perform a screening. BioLens provides preliminary visual screening outputs and is not a medical diagnosis.',
         },
       };
-
-      storage.addHistory(emptyResult);
 
       return emptyResult;
     }
 
-    /**
-     * Try the real FastAPI backend first.
+    /*
+     * ----------------------------------------------------------
+     * REAL BACKEND REQUEST
+     * ----------------------------------------------------------
      */
+    let response: Response;
+
     try {
-      const res = await fetch(`${this.baseUrl}/analyze`, {
+      response = await fetch(`${this.baseUrl}/analyze`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
 
-        /**
-         * Send ONLY available images.
-         *
-         * This is the key change for skipped-modality handling.
+        /*
+         * Send ONLY modalities that actually contain images.
          */
         body: JSON.stringify({
           images: availableImages,
         }),
       });
-
-      if (res.ok) {
-        const backendResult: ScreeningResult = await res.json();
-
-        /**
-         * Normalize the backend result so the frontend still has
-         * predictable four-modality structure and skipped modalities
-         * cannot accidentally contribute.
-         */
-        const normalizedResult = this.normalizeResult(
-          backendResult,
-          images
-        );
-
-        storage.addHistory(normalizedResult);
-
-        return normalizedResult;
-      }
-    } catch {
-      // Server not connected -> use demo analysis service.
+    } catch (error) {
+      throw new Error(
+        'BioLens backend is not reachable. Please make sure the FastAPI server is running on port 8000.'
+      );
     }
 
-    /**
-     * Demo fallback.
-     *
-     * Demo analysis also receives only available images.
-     * This prevents skipped modalities from being analyzed.
+    /*
+     * ----------------------------------------------------------
+     * BACKEND HTTP ERROR
+     * ----------------------------------------------------------
      */
-    const demoResult = runDemoAnalysis(
-      availableImages as Record<ModalityType, string>
-    );
+    if (!response.ok) {
+      let detail = '';
 
-    const normalizedDemoResult = this.normalizeResult(
-      demoResult,
+      try {
+        const errorBody = await response.json();
+
+        if (errorBody?.detail) {
+          detail =
+            typeof errorBody.detail === 'string'
+              ? errorBody.detail
+              : JSON.stringify(errorBody.detail);
+        }
+      } catch {
+        // Ignore JSON parsing failure.
+      }
+
+      throw new Error(
+        `BioLens analysis failed (HTTP ${response.status})${
+          detail ? `: ${detail}` : '.'
+        }`
+      );
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * PARSE REAL BACKEND RESPONSE
+     * ----------------------------------------------------------
+     */
+    let backendResult: BackendAnalyzeResponse;
+
+    try {
+      backendResult =
+        (await response.json()) as BackendAnalyzeResponse;
+    } catch {
+      throw new Error(
+        'BioLens backend returned an invalid analysis response.'
+      );
+    }
+
+    /*
+     * Make sure the backend returned the expected top-level status.
+     */
+    if (backendResult.status !== 'success') {
+      throw new Error(
+        'BioLens backend did not return a successful analysis status.'
+      );
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * TRANSFORM BACKEND -> FRONTEND
+     * ----------------------------------------------------------
+     */
+    const screeningResult = this.transformBackendResult(
+      backendResult,
       images
     );
 
-    storage.addHistory(normalizedDemoResult);
+    /*
+     * Save the REAL result to local history.
+     */
+    storage.addHistory(screeningResult);
 
-    return normalizedDemoResult;
+    return screeningResult;
   }
 
   /**
@@ -667,3 +871,4 @@ class BioLensApiClient {
 }
 
 export const api = new BioLensApiClient(API_BASE_URL);
+

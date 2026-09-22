@@ -3,6 +3,7 @@ import {
   Eye,
   Smile,
   Layers,
+  Hand,
   Check,
   RotateCcw,
   ArrowRight,
@@ -42,6 +43,7 @@ const ALL_MODALITIES: ModalityType[] = [
   'eye',
   'tongue',
   'nail',
+  'palm',
   'skin',
 ];
 
@@ -82,8 +84,17 @@ const modalityMeta: Record<
     icon: Layers,
   },
 
-  skin: {
+  palm: {
     stepNumber: 4,
+    name: 'Palm',
+    subtitle: 'Palm Surface',
+    instruction:
+      'Hold your palm flat and steady with the palm surface clearly visible in good, even lighting.',
+    icon: Hand,
+  },
+
+  skin: {
+    stepNumber: 5,
     name: 'Skin',
     subtitle: 'Skin Area',
     instruction:
@@ -156,6 +167,9 @@ export function CapturePage({
         return 'nail';
 
       case 'nail':
+        return 'palm';
+
+      case 'palm':
         return 'skin';
 
       case 'skin':
@@ -214,31 +228,19 @@ export function CapturePage({
       return;
     }
 
-    /*
-     * Save image into parent state.
-     */
     onSaveImage(
       currentModality,
       tempImage
     );
 
-    /*
-     * Find next modality.
-     */
     const nextModality =
       getNextModality(currentModality);
 
-    /*
-     * Skin is the final modality.
-     */
     if (!nextModality) {
       onFinishedAll();
       return;
     }
 
-    /*
-     * Move to next modality.
-     */
     onNextModality(nextModality);
   };
 
@@ -247,30 +249,11 @@ export function CapturePage({
   // =========================================================
 
   const handleSkip = () => {
-    /*
-     * IMPORTANT:
-     *
-     * Clear any temporary image first.
-     */
     setTempImage(null);
-
-    /*
-     * Reset local capture UI.
-     */
     setActiveMode('select');
 
-    /*
-     * Tell App.tsx that this modality was skipped.
-     */
     onSkipModality(currentModality);
   };
-
-  // =========================================================
-  // CURRENT MODALITY ALREADY CAPTURED?
-  // =========================================================
-
-  const hasCurrentImage =
-    Boolean(capturedImages[currentModality]);
 
   // =========================================================
   // SELECT MODE
@@ -282,19 +265,13 @@ export function CapturePage({
 
         <div className="mx-auto max-w-5xl">
 
-          {/* =================================================
-              HEADER
-          ================================================== */}
-
           <div className="mb-6">
-
             <ProgressStepper
               currentModality={currentModality}
               completedModalities={
                 completedModalities
               }
             />
-
           </div>
 
           <div className="mb-6 flex items-start justify-between gap-4">
@@ -315,7 +292,7 @@ export function CapturePage({
                 <div>
 
                   <p className="text-xs font-bold uppercase tracking-wider text-teal-600">
-                    Step {currentInfo.stepNumber} of 4
+                    Step {currentInfo.stepNumber} of 5
                   </p>
 
                   <h1 className="text-2xl font-bold text-slate-900">
@@ -367,7 +344,9 @@ export function CapturePage({
                 <div>
 
                   <p className="text-sm font-medium text-slate-700">
-                    Don't have a suitable {currentInfo.name.toLowerCase()} image?
+                    Don't have a suitable{' '}
+                    {currentInfo.name.toLowerCase()}{' '}
+                    image?
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -379,10 +358,6 @@ export function CapturePage({
                 </div>
 
               </div>
-
-              {/* =================================================
-                  IMPORTANT SKIP BUTTON
-              ================================================== */}
 
               <button
                 type="button"
@@ -431,20 +406,18 @@ export function CapturePage({
         <div className="mx-auto max-w-4xl">
 
           <div className="mb-6">
-
             <ProgressStepper
               currentModality={currentModality}
               completedModalities={
                 completedModalities
               }
             />
-
           </div>
 
           <div className="mb-5">
 
             <p className="text-xs font-bold uppercase tracking-wider text-teal-600">
-              Step {currentInfo.stepNumber} of 4
+              Step {currentInfo.stepNumber} of 5
             </p>
 
             <h1 className="mt-1 text-2xl font-bold text-slate-900">
@@ -471,10 +444,6 @@ export function CapturePage({
 
           </div>
 
-          {/* =================================================
-              CAMERA MODE SKIP
-          ================================================== */}
-
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
 
             <button
@@ -483,6 +452,7 @@ export function CapturePage({
               className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               <SkipForward className="h-4 w-4" />
+
               Skip {currentInfo.name} Image
             </button>
 
@@ -503,10 +473,6 @@ export function CapturePage({
 
       <div className="mx-auto max-w-5xl">
 
-        {/* ===================================================
-            STEPPER
-        ==================================================== */}
-
         <div className="mb-6">
 
           <ProgressStepper
@@ -517,10 +483,6 @@ export function CapturePage({
           />
 
         </div>
-
-        {/* ===================================================
-            HEADER
-        ==================================================== */}
 
         <div className="mb-6">
 
@@ -538,7 +500,7 @@ export function CapturePage({
             <div>
 
               <p className="text-xs font-bold uppercase tracking-wider text-teal-600">
-                Step {currentInfo.stepNumber} of 4
+                Step {currentInfo.stepNumber} of 5
               </p>
 
               <h1 className="text-2xl font-bold text-slate-900">
@@ -573,10 +535,6 @@ export function CapturePage({
 
             </div>
           )}
-
-          {/* =================================================
-              PREVIEW INFORMATION
-          ================================================== */}
 
           <div className="border-t border-slate-200 p-5">
 

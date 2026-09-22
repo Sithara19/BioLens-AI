@@ -7,6 +7,7 @@ import {
   Eye,
   Smile,
   Layers,
+  Hand,
 } from 'lucide-react';
 
 import { ModalityType } from '../types';
@@ -24,10 +25,6 @@ export const AllCapturedPage: React.FC<
   onReviewImages,
   onContinueToAnalysis,
 }) => {
-  // =========================================================
-  // FOUR MODALITIES
-  // =========================================================
-
   const modalityLabels: {
     key: ModalityType;
     label: string;
@@ -51,17 +48,16 @@ export const AllCapturedPage: React.FC<
       icon: Layers,
     },
     {
+      key: 'palm',
+      label: 'Palm',
+      icon: Hand,
+    },
+    {
       key: 'skin',
       label: 'Skin',
       icon: Layers,
     },
   ];
-
-  // =========================================================
-  // AVAILABLE MODALITIES
-  //
-  // Only modalities with an image will be sent for analysis.
-  // =========================================================
 
   const availableModalities =
     modalityLabels.filter(
@@ -82,23 +78,13 @@ export const AllCapturedPage: React.FC<
     skippedModalities.length;
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8 animate-in fade-in zoom-in-95 duration-300">
-
-      {/* =====================================================
-          MAIN CARD
-      ====================================================== */}
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8 animate-in fade-in zoom-in-95 duration-300">
 
       <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-7 sm:p-10 text-center space-y-7">
-
-        {/* Success Check Icon */}
 
         <div className="w-20 h-20 rounded-3xl bg-teal-50 border border-teal-200 text-teal-600 mx-auto flex items-center justify-center shadow-sm">
           <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
         </div>
-
-        {/* ===================================================
-            HEADING
-        ==================================================== */}
 
         <div className="space-y-2">
 
@@ -111,18 +97,14 @@ export const AllCapturedPage: React.FC<
           </h2>
 
           <p className="text-sm text-slate-600 max-w-xl mx-auto leading-relaxed">
-            {capturedCount === 4
-              ? 'All four requested images are available for multimodal screening.'
+            {capturedCount === 5
+              ? 'All five requested images are available for multimodal screening.'
               : capturedCount > 0
-              ? `${capturedCount} of 4 images are available for screening. Skipped modalities will not be analyzed or contribute to the result.`
+              ? `${capturedCount} of 5 images are available for screening. Skipped modalities will not be analyzed.`
               : 'No images were provided. You can review your selections or return to capture images before continuing.'}
           </p>
 
         </div>
-
-        {/* ===================================================
-            STATUS SUMMARY
-        ==================================================== */}
 
         <div className="flex flex-wrap items-center justify-center gap-2">
 
@@ -140,11 +122,7 @@ export const AllCapturedPage: React.FC<
 
         </div>
 
-        {/* ===================================================
-            MODALITY CARDS
-        ==================================================== */}
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
 
           {modalityLabels.map(
             (modality) => {
@@ -167,10 +145,6 @@ export const AllCapturedPage: React.FC<
                       : 'bg-slate-50/70 border-slate-200'
                   }`}
                 >
-
-                  {/* =========================================
-                      IMAGE / STATUS AREA
-                  ========================================== */}
 
                   <div
                     className={`aspect-square w-full rounded-xl overflow-hidden relative border shadow-inner ${
@@ -202,8 +176,6 @@ export const AllCapturedPage: React.FC<
                       </div>
                     )}
 
-                    {/* Status badge */}
-
                     <div
                       className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full text-white flex items-center justify-center shadow-sm ${
                         hasImage
@@ -219,10 +191,6 @@ export const AllCapturedPage: React.FC<
                     </div>
 
                   </div>
-
-                  {/* =========================================
-                      LABEL
-                  ========================================== */}
 
                   <div>
 
@@ -251,10 +219,6 @@ export const AllCapturedPage: React.FC<
 
         </div>
 
-        {/* ===================================================
-            ANALYSIS INFORMATION
-        ==================================================== */}
-
         {skippedCount > 0 && (
           <div className="flex items-start gap-3 text-left p-4 rounded-2xl bg-amber-50 border border-amber-200">
 
@@ -278,7 +242,8 @@ export const AllCapturedPage: React.FC<
                   : 'were'}{' '}
                 skipped. No AI analysis or
                 contribution will be assigned
-                to {skippedCount === 1
+                to{' '}
+                {skippedCount === 1
                   ? 'this modality'
                   : 'these modalities'}.
               </p>
@@ -287,10 +252,6 @@ export const AllCapturedPage: React.FC<
 
           </div>
         )}
-
-        {/* ===================================================
-            CTA BUTTONS
-        ==================================================== */}
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4 border-t border-slate-100">
 

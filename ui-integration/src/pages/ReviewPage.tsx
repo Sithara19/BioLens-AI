@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   SkipForward,
   FileCheck2,
+  Hand,
 } from 'lucide-react';
 
 import { ModalityType } from '../types';
@@ -44,10 +45,6 @@ export const ReviewPage: React.FC<
     'upload'
   );
 
-  // =========================================================
-  // FOUR MODALITIES
-  // =========================================================
-
   const modalities: {
     key: ModalityType;
     label: string;
@@ -75,16 +72,18 @@ export const ReviewPage: React.FC<
       icon: Layers,
     },
     {
+      key: 'palm',
+      label: 'Palm',
+      clinicalArea: 'Palm Surface',
+      icon: Hand,
+    },
+    {
       key: 'skin',
       label: 'Skin',
       clinicalArea: 'Skin Area',
       icon: Layers,
     },
   ];
-
-  // =========================================================
-  // COUNTS
-  // =========================================================
 
   const capturedCount =
     modalities.filter(
@@ -94,10 +93,6 @@ export const ReviewPage: React.FC<
 
   const skippedCount =
     modalities.length - capturedCount;
-
-  // =========================================================
-  // IMAGE REPLACEMENT
-  // =========================================================
 
   const handleInlineImageSelected = (
     url: string
@@ -118,12 +113,12 @@ export const ReviewPage: React.FC<
     setReplacingMode('upload');
   };
 
+  const handleCameraOpen = () => {
+    setReplacingMode('camera');
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 animate-in fade-in duration-300">
-
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
 
       <div className="text-center max-w-2xl mx-auto space-y-2">
 
@@ -143,10 +138,6 @@ export const ReviewPage: React.FC<
 
       </div>
 
-      {/* =====================================================
-          STATUS SUMMARY
-      ====================================================== */}
-
       <div className="flex flex-wrap items-center justify-center gap-2">
 
         <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold">
@@ -162,10 +153,6 @@ export const ReviewPage: React.FC<
         )}
 
       </div>
-
-      {/* =====================================================
-          INLINE REPLACEMENT MODAL
-      ====================================================== */}
 
       {replacingModality && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -220,10 +207,8 @@ export const ReviewPage: React.FC<
                 onImageSelected={
                   handleInlineImageSelected
                 }
-                onOpenLiveCamera={() =>
-                  setReplacingMode(
-                    'camera'
-                  )
+                onOpenCamera={
+                  handleCameraOpen
                 }
               />
             )}
@@ -233,11 +218,7 @@ export const ReviewPage: React.FC<
         </div>
       )}
 
-      {/* =====================================================
-          MODALITY CARDS
-      ====================================================== */}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
 
         {modalities.map(
           (modality) => {
@@ -263,10 +244,6 @@ export const ReviewPage: React.FC<
               >
 
                 <div>
-
-                  {/* =========================================
-                      IMAGE VIEWPORT
-                  ========================================== */}
 
                   <div
                     className={`relative aspect-4/3 w-full overflow-hidden border-b border-slate-100 flex items-center justify-center ${
@@ -298,10 +275,6 @@ export const ReviewPage: React.FC<
                       </div>
                     )}
 
-                    {/* =======================================
-                        STATUS BADGE
-                    ======================================== */}
-
                     <div
                       className={`absolute top-2.5 right-2.5 px-2 py-1 rounded-md backdrop-blur-sm text-[10px] font-mono font-bold flex items-center gap-1 border ${
                         hasImage
@@ -325,10 +298,6 @@ export const ReviewPage: React.FC<
                     </div>
 
                   </div>
-
-                  {/* =========================================
-                      DETAILS
-                  ========================================== */}
 
                   <div className="p-4 space-y-1">
 
@@ -370,10 +339,6 @@ export const ReviewPage: React.FC<
 
                 </div>
 
-                {/* =========================================
-                    RETAKE / ADD IMAGE BUTTON
-                ========================================== */}
-
                 <div className="p-4 pt-0">
 
                   <button
@@ -406,10 +371,6 @@ export const ReviewPage: React.FC<
 
       </div>
 
-      {/* =====================================================
-          SKIPPED MODALITY INFORMATION
-      ====================================================== */}
-
       {skippedCount > 0 && (
         <div className="max-w-3xl mx-auto flex items-start gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
 
@@ -432,10 +393,6 @@ export const ReviewPage: React.FC<
 
         </div>
       )}
-
-      {/* =====================================================
-          PRIMARY ACTION
-      ====================================================== */}
 
       <div className="text-center pt-4">
 
